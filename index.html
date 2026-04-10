@@ -167,6 +167,8 @@
     const fileInput = document.getElementById('excelFile');
     const generateBtn = document.getElementById('generateBtn');
 
+    const LOGO_URL = 'https://raw.githubusercontent.com/zivakipom56-alt/schedule_week/main/logo%20sith.jpg';
+
     const RU_MONTHS = [
       'января', 'февраля', 'марта', 'апреля', 'мая', 'июня',
       'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'
@@ -238,14 +240,6 @@
       return addDays(d, diff);
     }
 
-    function sameDate(a, b) {
-      return a &&
-             b &&
-             a.getFullYear() === b.getFullYear() &&
-             a.getMonth() === b.getMonth() &&
-             a.getDate() === b.getDate();
-    }
-
     function formatDateShort(date) {
       return `${String(date.getDate()).padStart(2, '0')}.${String(date.getMonth() + 1).padStart(2, '0')}`;
     }
@@ -293,6 +287,7 @@
 
       return {
         city: placeIndexes[0] ?? -1,
+        place: placeIndexes[0] ?? -1,
         course: findIndex(name => name === 'название мероприятия'),
         start: findIndex(name => name === 'дата начала'),
         end: findIndex(name => name === 'дата завершения'),
@@ -327,7 +322,7 @@
     }
 
     function splitLongText(text, chunkSize = 44) {
-      const words = cleanText(text).split(' ');
+      const words = cleanText(text).split(' ').filter(Boolean);
       const lines = [];
       let current = '';
 
@@ -371,6 +366,26 @@
       return firstChunk;
     }
 
+    function extractRoomAndFloor(place) {
+      const text = cleanText(place);
+      if (!text) return { room: '', floor: '' };
+
+      const lowered = text.toLowerCase();
+
+      if (lowered.includes('полигоны')) {
+        return { room: 'Полигоны', floor: '' };
+      }
+
+      const roomMatch = text.match(/\b(\d\.\d{1,2})\b/);
+      if (roomMatch) {
+        const room = roomMatch[1];
+        const floor = room.charAt(0);
+        return { room, floor };
+      }
+
+      return { room: '', floor: '' };
+    }
+
     function buildDayCourses(courses, day) {
       return courses
         .filter(c => c.start <= day && c.end >= day)
@@ -390,7 +405,7 @@
       const header = rows[headerIndex].map(cleanText);
       const map = buildHeaderMap(header);
 
-      if ([map.city, map.course, map.start, map.end, map.trainer].some(v => v === -1)) {
+      if ([map.city, map.place, map.course, map.start, map.end, map.trainer].some(v => v === -1)) {
         throw new Error('Не удалось определить нужные столбцы в Excel.');
       }
 
@@ -399,9 +414,9 @@
 
       for (const row of allDataRows) {
         const city = cleanText(row[map.city]);
-
         if (!city || !normalizeText(city).includes('нижнекамск')) continue;
 
+        const place = cleanText(row[map.place]);
         const course = cleanText(row[map.course]);
         const trainer = cleanText(row[map.trainer]);
         const start = excelDateToJS(row[map.start]);
@@ -409,12 +424,17 @@
 
         if (!course || !start || !end) continue;
 
+        const placeInfo = extractRoomAndFloor(place);
+
         courses.push({
           city,
+          place,
           course,
           trainer,
           start,
-          end: end < start ? start : end
+          end: end < start ? start : end,
+          room: placeInfo.room,
+          floor: placeInfo.floor
         });
       }
 
@@ -447,25 +467,12 @@
         });
       }
 
-      slide.addText('СИБУР', {
-        x: 0.05, y: 0.03, w: 1.2, h: 0.28,
-        fontFace: 'Arial', fontSize: 20, bold: true, color: '008A95', margin: 0
-      });
-
-      slide.addText('ИНТЕХ НК', {
-        x: 0.05, y: 0.28, w: 1.05, h: 0.18,
-        fontFace: 'Arial', fontSize: 10, bold: true, color: '0B4F56', margin: 0
-      });
-
-      slide.addShape('line', {
-        x: 0.05, y: 0.49, w: 1.15, h: 0,
-        line: { color: '0B8F9A', width: 1.2 }
-      });
-
-      slide.addShape('ellipse', {
-        x: 1.16, y: 0.465, w: 0.04, h: 0.04,
-        line: { color: '0B8F9A', width: 0.8 },
-        fill: { color: '0B8F9A' }
+      slide.addImage({
+        path: LOGO_URL,
+        x: 0.05,
+        y: 0.03,
+        w: 1.2,
+        h: 0.52
       });
 
       slide.addShape('rect', {
@@ -506,8 +513,8 @@
       });
 
       const headerY = 0.9;
-      const colXs = [0.22, 1.47, 2.72, 8.35, 10.55, 11.75];
-      const colWs = [1.25, 1.25, 5.63, 2.20, 1.20, 1.30];
+      const colXs = [0.22, 1.47, 2.72, 8.35, 10.52, 11.30];
+      const colWs = [1.25, 1.25, 5.63, 2.17, 0.78, 1.75];
       const labels = [
         'Время\nначала',
         'Время\nокончания',
@@ -560,11 +567,11 @@
       const bodyHeight = 4.85;
       const rowCount = Math.max(dayCourses.length, 1);
       const dense = rowCount > 10;
-      const fontSize = rowCount > 12 ? 9.5 : rowCount > 9 ? 10.5 : 11.5;
+      const fontSize = rowCount > 12 ? 9.2 : rowCount > 9 ? 10.2 : 11.2;
       const rowH = Math.min(0.58, bodyHeight / Math.max(rowCount, 8));
 
-      const colXs = [0.22, 1.47, 2.72, 8.35, 10.55, 11.75];
-      const colWs = [1.25, 1.25, 5.63, 2.20, 1.20, 1.30];
+      const colXs = [0.22, 1.47, 2.72, 8.35, 10.52, 11.30];
+      const colWs = [1.25, 1.25, 5.63, 2.17, 0.78, 1.75];
 
       for (let i = 0; i < Math.max(rowCount, 8); i++) {
         const lineY = bodyTop + i * rowH;
@@ -590,10 +597,10 @@
 
         const startTimeText = '08:00';
         const endTimeText = '17:00';
-        const courseText = splitLongText(course.course, dense ? 52 : 44);
-        const trainerText = splitLongText(extractFirstTrainerName(course.trainer), dense ? 22 : 20);
-        const floorText = '';
-        const roomText = '';
+        const courseText = splitLongText(course.course, dense ? 54 : 44);
+        const trainerText = splitLongText(extractFirstTrainerName(course.trainer), dense ? 22 : 18);
+        const floorText = course.floor || '';
+        const roomText = course.room || '';
 
         slide.addText(startTimeText, {
           x: colXs[0], y, w: colWs[0], h: rowH - 0.04,
@@ -616,7 +623,7 @@
         slide.addText(trainerText, {
           x: colXs[3] + 0.03, y, w: colWs[3] - 0.06, h: rowH - 0.04,
           fontFace: 'Arial', fontSize, color: '111111',
-          align: 'center', valign: 'mid', margin: 0, fit: 'shrink'
+          align: 'left', valign: 'mid', margin: 0, fit: 'shrink'
         });
 
         slide.addText(floorText, {
