@@ -287,7 +287,7 @@
         .map(item => item.idx);
 
       return {
-        cityCandidates: placeIndexes,
+        placeCandidates: placeIndexes,
         course: findIndex(name => name === 'название мероприятия'),
         start: findIndex(name => name === 'дата начала'),
         end: findIndex(name => name === 'дата завершения'),
@@ -302,16 +302,16 @@
       const scoreColumn = (colIdx) => {
         let score = 0;
 
-        for (let r = startRowIndex; r < Math.min(rows.length, startRowIndex + 400); r++) {
+        for (let r = startRowIndex; r < Math.min(rows.length, startRowIndex + 500); r++) {
           const value = cleanText(rows[r]?.[colIdx]);
           if (!value) continue;
 
           const lowered = value.toLowerCase();
 
           if (lowered.includes('нижнекамск')) score += 1;
-          if (lowered.includes('полигоны')) score += 5;
-          if (/\b\d\.\d{1,2}\b/.test(value)) score += 5;
-          if (value.includes('СИБУРИНТЕХ')) score += 1;
+          if (lowered.includes('сибуринтех')) score += 1;
+          if (lowered.includes('полигоны')) score += 6;
+          if (/\b\d\.\d{1,2}\b/.test(value)) score += 6;
         }
 
         return score;
@@ -361,25 +361,6 @@
       return best;
     }
 
-    function splitLongText(text, chunkSize = 44) {
-      const words = cleanText(text).split(' ').filter(Boolean);
-      const lines = [];
-      let current = '';
-
-      for (const word of words) {
-        const next = current ? current + ' ' + word : word;
-        if (next.length > chunkSize && current) {
-          lines.push(current);
-          current = word;
-        } else {
-          current = next;
-        }
-      }
-
-      if (current) lines.push(current);
-      return lines.join('\n');
-    }
-
     function extractFirstTrainerName(value) {
       const raw = String(value ?? '')
         .replace(/\u00A0/g, ' ')
@@ -396,7 +377,6 @@
       if (!firstChunk) return '';
 
       const parts = firstChunk.split(/\s+/).filter(Boolean);
-
       if (parts.length >= 2) {
         const surname = parts[0];
         const name = parts[1];
@@ -419,17 +399,55 @@
       const roomMatch = text.match(/\b(\d\.\d{1,2})\b/);
       if (roomMatch) {
         const room = roomMatch[1];
-        const floor = room.charAt(0);
-        return { room, floor };
+        return { room, floor: room.charAt(0) };
       }
 
       return { room: '', floor: '' };
     }
 
+    function compareRoomValues(a, b) {
+      const roomA = cleanText(a.room);
+      const roomB = cleanText(b.room);
+
+      const isEmptyA = !roomA;
+      const isEmptyB = !roomB;
+      const isPolyA = normalizeText(roomA) === 'полигоны';
+      const isPolyB = normalizeText(roomB) === 'полигоны';
+
+      if (isEmptyA && !isEmptyB) return 1;
+      if (!isEmptyA && isEmptyB) return -1;
+
+      if (isPolyA && !isPolyB) return 1;
+      if (!isPolyA && isPolyB) return -1;
+
+      if (isPolyA && isPolyB) {
+        return a.course.localeCompare(b.course, 'ru');
+      }
+
+      if (isEmptyA && isEmptyB) {
+        return a.course.localeCompare(b.course, 'ru');
+      }
+
+      const matchA = roomA.match(/^(\d)\.(\d{1,2})$/);
+      const matchB = roomB.match(/^(\d)\.(\d{1,2})$/);
+
+      if (matchA && matchB) {
+        const floorA = Number(matchA[1]);
+        const floorB = Number(matchB[1]);
+        if (floorA !== floorB) return floorA - floorB;
+
+        const numA = Number(matchA[2]);
+        const numB = Number(matchB[2]);
+        if (numA !== numB) return numA - numB;
+      }
+
+      return roomA.localeCompare(roomB, 'ru') || a.course.localeCompare(b.course, 'ru');
+    }
+
     function buildDayCourses(courses, day) {
       return courses
         .filter(c => c.start <= day && c.end >= day)
-        .sort((a, b) => a.start - b.start || a.course.localeCompare(b.course, 'ru'));
+        .sort(compareRoomValues);
     }
 
     function extractCourses(workbook, fileName) {
@@ -444,8 +462,7 @@
 
       const header = rows[headerIndex].map(cleanText);
       const map = buildHeaderMap(header);
-
-      const placeColumnIndex = chooseBestPlaceColumn(rows, headerIndex + 1, map.cityCandidates);
+      const placeColumnIndex = chooseBestPlaceColumn(rows, headerIndex + 1, map.placeCandidates);
 
       if ([placeColumnIndex, map.course, map.start, map.end, map.trainer].some(v => v === -1)) {
         throw new Error('Не удалось определить нужные столбцы в Excel.');
@@ -457,7 +474,6 @@
       for (const row of allDataRows) {
         const placeRaw = cleanText(row[placeColumnIndex]);
         if (!placeRaw) continue;
-
         if (!normalizeText(placeRaw).includes('нижнекамск')) continue;
 
         const course = cleanText(row[map.course]);
@@ -499,10 +515,10 @@
 
       slide.addImage({
         path: BG_TOP_RIGHT_URL,
-        x: 9.55,
+        x: 9.65,
         y: 0.0,
-        w: 3.78,
-        h: 1.25
+        w: 3.68,
+        h: 1.18
       });
 
       slide.addImage({
@@ -514,13 +530,19 @@
       });
 
       slide.addShape('rect', {
-        x: 1.55, y: 0.22, w: 11.5, h: 0.36,
+        x: 1.55,
+        y: 0.22,
+        w: 10.0,
+        h: 0.36,
         fill: { color: '0B7E88' },
         line: { color: '0B7E88', transparency: 100 }
       });
 
       slide.addText('Расписание обучений', {
-        x: 4.45, y: 0.26, w: 3.6, h: 0.22,
+        x: 4.0,
+        y: 0.26,
+        w: 5.1,
+        h: 0.22,
         align: 'center',
         fontFace: 'Arial',
         fontSize: 18,
@@ -530,13 +552,19 @@
       });
 
       slide.addShape('rect', {
-        x: 0.22, y: 0.58, w: 12.83, h: 0.3,
+        x: 0.22,
+        y: 0.58,
+        w: 12.83,
+        h: 0.3,
         fill: { color: '0A98A4' },
         line: { color: '0A98A4', transparency: 100 }
       });
 
       slide.addText(formatSlideDate(day), {
-        x: 4.15, y: 0.62, w: 5.0, h: 0.18,
+        x: 4.05,
+        y: 0.62,
+        w: 5.0,
+        h: 0.18,
         align: 'center',
         fontFace: 'Arial',
         fontSize: 13,
@@ -546,13 +574,16 @@
       });
 
       slide.addShape('line', {
-        x: 0.2, y: 0.89, w: 13.05, h: 0,
+        x: 0.2,
+        y: 0.89,
+        w: 13.05,
+        h: 0,
         line: { color: '111111', width: 1.1 }
       });
 
       const headerY = 0.9;
-      const colXs = [0.22, 1.47, 2.72, 8.35, 10.52, 11.30];
-      const colWs = [1.25, 1.25, 5.63, 2.17, 0.78, 1.75];
+      const colXs = [0.22, 1.22, 2.22, 8.95, 10.75, 11.48];
+      const colWs = [1.00, 1.00, 6.73, 1.80, 0.73, 1.57];
       const labels = [
         'Время\nначала',
         'Время\nокончания',
@@ -579,6 +610,7 @@
           h: 0.3,
           fontFace: 'Arial',
           fontSize: 10,
+          bold: false,
           color: 'FFFFFF',
           align: 'center',
           valign: 'mid',
@@ -587,31 +619,46 @@
       }
 
       slide.addText('Ежедневно для всех желающих в СИБУРИНТЕХ-НК проводится экскурсия по зданию с посещением учебных классов.', {
-        x: 1.85, y: 6.82, w: 9.8, h: 0.22,
-        fontFace: 'Arial', fontSize: 10.5, color: '111111', align: 'center', margin: 0
+        x: 1.85,
+        y: 6.82,
+        w: 9.8,
+        h: 0.22,
+        fontFace: 'Arial',
+        fontSize: 10.5,
+        color: '111111',
+        align: 'center',
+        margin: 0
       });
 
       slide.addText([
         { text: 'Место встречи: у расписания на 1 этаже в 11:00. ', options: { bold: true } },
         { text: 'По вопросам экскурсии Вы можете обратиться в кабинет 3.15.' }
       ], {
-        x: 1.65, y: 7.03, w: 10.2, h: 0.26,
-        fontFace: 'Arial', fontSize: 10.5, color: '111111', align: 'center', margin: 0
+        x: 1.65,
+        y: 7.03,
+        w: 10.2,
+        h: 0.26,
+        fontFace: 'Arial',
+        fontSize: 10.5,
+        color: '111111',
+        align: 'center',
+        margin: 0
       });
     }
 
     function renderDayRows(slide, dayCourses) {
       const bodyTop = 1.43;
-      const bodyHeight = 4.85;
-      const rowCount = Math.max(dayCourses.length, 1);
-      const dense = rowCount > 10;
-      const fontSize = rowCount > 12 ? 9.2 : rowCount > 9 ? 10.2 : 11.2;
-      const rowH = Math.min(0.58, bodyHeight / Math.max(rowCount, 8));
+      const footerTop = 6.82;
+      const bodyBottom = footerTop - 0.14;
+      const bodyHeight = bodyBottom - bodyTop;
+      const visibleRows = Math.max(dayCourses.length, 8);
+      const rowH = bodyHeight / visibleRows;
 
-      const colXs = [0.22, 1.47, 2.72, 8.35, 10.52, 11.30];
-      const colWs = [1.25, 1.25, 5.63, 2.17, 0.78, 1.75];
+      const fontSize = 10.6;
+      const colXs = [0.22, 1.22, 2.22, 8.95, 10.75, 11.48];
+      const colWs = [1.00, 1.00, 6.73, 1.80, 0.73, 1.57];
 
-      for (let i = 0; i < Math.max(rowCount, 8); i++) {
+      for (let i = 0; i < visibleRows; i++) {
         const lineY = bodyTop + i * rowH;
         slide.addShape('line', {
           x: 0.22,
@@ -624,56 +671,101 @@
 
       slide.addShape('line', {
         x: 0.22,
-        y: bodyTop + Math.max(rowCount, 8) * rowH,
+        y: bodyTop + visibleRows * rowH,
         w: 12.83,
         h: 0,
         line: { color: '9CC6CC', width: 0.8 }
       });
 
       dayCourses.forEach((course, idx) => {
-        const y = bodyTop + idx * rowH + 0.03;
+        const y = bodyTop + idx * rowH + 0.02;
+        const rowHeight = rowH - 0.03;
 
-        const startTimeText = '08:00';
-        const endTimeText = '17:00';
-        const courseText = splitLongText(course.course, dense ? 54 : 44);
-        const trainerText = splitLongText(extractFirstTrainerName(course.trainer), dense ? 22 : 18);
-        const floorText = course.floor || '';
-        const roomText = course.room || '';
-
-        slide.addText(startTimeText, {
-          x: colXs[0], y, w: colWs[0], h: rowH - 0.04,
-          fontFace: 'Arial', fontSize, color: '111111',
-          align: 'center', valign: 'mid', margin: 0, fit: 'shrink'
+        slide.addText('08:00', {
+          x: colXs[0],
+          y,
+          w: colWs[0],
+          h: rowHeight,
+          fontFace: 'Arial',
+          fontSize,
+          color: '111111',
+          align: 'center',
+          valign: 'mid',
+          margin: 0,
+          fit: 'shrink'
         });
 
-        slide.addText(endTimeText, {
-          x: colXs[1], y, w: colWs[1], h: rowH - 0.04,
-          fontFace: 'Arial', fontSize, color: '111111',
-          align: 'center', valign: 'mid', margin: 0, fit: 'shrink'
+        slide.addText('17:00', {
+          x: colXs[1],
+          y,
+          w: colWs[1],
+          h: rowHeight,
+          fontFace: 'Arial',
+          fontSize,
+          color: '111111',
+          align: 'center',
+          valign: 'mid',
+          margin: 0,
+          fit: 'shrink'
         });
 
-        slide.addText(courseText, {
-          x: colXs[2] + 0.03, y, w: colWs[2] - 0.06, h: rowH - 0.04,
-          fontFace: 'Arial', fontSize, color: '111111',
-          align: 'left', valign: 'mid', margin: 0, fit: 'shrink'
+        slide.addText(course.course, {
+          x: colXs[2] + 0.03,
+          y,
+          w: colWs[2] - 0.06,
+          h: rowHeight,
+          fontFace: 'Arial',
+          fontSize,
+          color: '111111',
+          align: 'left',
+          valign: 'mid',
+          margin: 0,
+          breakLine: false,
+          fit: 'shrink'
         });
 
-        slide.addText(trainerText, {
-          x: colXs[3] + 0.03, y, w: colWs[3] - 0.06, h: rowH - 0.04,
-          fontFace: 'Arial', fontSize, color: '111111',
-          align: 'left', valign: 'mid', margin: 0, fit: 'shrink'
+        slide.addText(extractFirstTrainerName(course.trainer), {
+          x: colXs[3] + 0.03,
+          y,
+          w: colWs[3] - 0.06,
+          h: rowHeight,
+          fontFace: 'Arial',
+          fontSize,
+          color: '111111',
+          align: 'left',
+          valign: 'mid',
+          margin: 0,
+          breakLine: false,
+          fit: 'shrink'
         });
 
-        slide.addText(floorText, {
-          x: colXs[4] + 0.02, y, w: colWs[4] - 0.04, h: rowH - 0.04,
-          fontFace: 'Arial', fontSize, color: '111111',
-          align: 'center', valign: 'mid', margin: 0, fit: 'shrink'
+        slide.addText(course.floor || '', {
+          x: colXs[4] + 0.01,
+          y,
+          w: colWs[4] - 0.02,
+          h: rowHeight,
+          fontFace: 'Arial',
+          fontSize,
+          color: '111111',
+          align: 'center',
+          valign: 'mid',
+          margin: 0,
+          fit: 'shrink'
         });
 
-        slide.addText(roomText, {
-          x: colXs[5] + 0.02, y, w: colWs[5] - 0.04, h: rowH - 0.04,
-          fontFace: 'Arial', fontSize, color: '111111',
-          align: 'center', valign: 'mid', margin: 0, fit: 'shrink'
+        slide.addText(course.room || '', {
+          x: colXs[5] + 0.02,
+          y,
+          w: colWs[5] - 0.04,
+          h: rowHeight,
+          fontFace: 'Arial',
+          fontSize,
+          color: '111111',
+          align: 'center',
+          valign: 'mid',
+          margin: 0,
+          breakLine: false,
+          fit: 'shrink'
         });
       });
     }
