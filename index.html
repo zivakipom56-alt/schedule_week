@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Excel → PPTX | Расписание обучения</title>
+  <style>
+    :root {
+      --bg: #f4f7f8;
+      --card: #ffffff;
+      --text: #17323a;
+      --muted: #5f6f75;
+      --line: #d7e3e7;
+      --brand: #0b8f9a;
+      --brand-dark: #0b4f56;
+      --danger: #b34747;
+      --ok: #146c43;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+    .wrap {
+      max-width: 920px;
+      margin: 32px auto;
+      padding: 0 16px;
+    }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 24px;
+      box-shadow: 0 10px 24px rgba(0,0,0,.04);
+    }
+    h1 { margin: 0 0 8px; font-size: 28px; }
+    p { margin: 0 0 12px; line-height: 1.45; color: var(--muted); }
+    .row { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin-top: 20px; }
+    .filebox {
+      flex: 1 1 340px;
+      border: 1px dashed #b7c8ce;
+      border-radius: 12px;
+      padding: 16px;
+      background: #fbfcfd;
+    }
+    input[type="file"] { width: 100%; }
+    button {
+      border: 0;
+      border-radius: 12px;
+      padding: 14px 18px;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      background: linear-gradient(90deg, var(--brand-dark), var(--brand));
+      color: #fff;
+      min-width: 220px;
+    }
+    button:disabled { opacity: .6; cursor: not-allowed; }
+    .status {
+      margin-top: 18px;
+      padding: 14px 16px;
+      border-radius: 12px;
+      background: #f6fafb;
+      border: 1px solid var(--line);
+      color: var(--text);
+      white-space: pre-wrap;
+    }
+    .status.error {
+      color: var(--danger);
+      border-color: #f1c6c6;
+      background: #fff6f6;
+    }
+    .status.success {
+      color: var(--ok);
+      border-color: #c7e6d6;
+      background: #f4fcf7;
+    }
+    .small { font-size: 13px; color: var(--muted); margin-top: 10px; }
+    .hint { margin-top: 24px; padding-top: 18px; border-top: 1px solid var(--line); }
+    code { background: #eef4f6; padding: 2px 6px; border-radius: 6px; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <h1>Конвертер Excel → PPTX</h1>
+      <p>Загрузи недельный Excel-график. Приложение возьмёт только курсы Нижнекамска, разложит их по дням недели и скачает готовую презентацию PowerPoint.</p>
+
+      <div class="row">
+        <div class="filebox">
+          <label for="excelFile"><strong>Excel-файл графика</strong></label>
+          <div class="small">Поддерживаются <code>.xlsx</code> и <code>.xls</code>.</div>
+          <input id="excelFile" type="file" accept=".xlsx,.xls,.xlsm" />
+        </div>
+        <button id="generateBtn">Сгенерировать PPTX</button>
+      </div>
+
+      <div id="status" class="status">Ожидаю Excel-файл.</div>
+
+      <div class="hint small">
+        Текущая логика ищет лист <code>Источник</code>, затем автоматически находит строку заголовков и берёт только строки, где город = <code>Нижнекамск</code>.
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/gitbrent/pptxgenjs/dist/pptxgen.bundle.js"></script>
+  <script>
+    const statusEl = document.getElementById('status');
+    const fileInput = document.getElementById('excelFile');
+    const generateBtn = document.getElementById('generateBtn');
+
+    const RU_MONTHS = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];
+
+    function setStatus(message, type = '') {
+      statusEl.textContent = message;
+      statusEl.className = 'status' + (type ? ' ' + type : '');
+    }
+
+    function normalizeText(value) {
+      return String(value ?? '').replace(/\u00A0/g, ' ').replace(/\s+/g, ' ').trim().toLowerCase();
+    }
+
+    function cleanText(value) {
+      return String(value ?? '').replace(/\u00A0/g, ' ').replace(/\s+/g, ' ').trim();
+    }
+
+    function excelDateToJS(value) {
+      if (value instanceof Date && !Number.isNaN(value)) {
+        return new Date(value.getFullYear(), value.getMonth(), value.getDate());
+      }
+      if (typeof value === 'number') {
+        const parsed = XLSX.SSF.parse_date_code(value);
+        if (!parsed) return null;
+        return new Date(parsed.y, parsed.m - 1, parsed.d);
+      }
+      if (typeof value === 'string' && value.trim()) {
+        const str = value.trim();
+        const m = str.match(/^(\d{1,2})[.\-\/](\d{1,2})[.\-\/](\d{2,4})$/);
+        if (m) {
+          let year = Number(m[3]);
+          if (year < 100) year += 2000;
+          return new Date(year, Number(m[2]) - 1, Number(m[1]));
+        }
+        const d = new Date(str);
+        if (!Number.isNaN(d)) return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+      }
+      return null;
+    }
+
+    function cloneDate(d) {
+      return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+    }
+
+    function addDays(date, days) {
+      const d = cloneDate(date);
+      d.setDate(d.getDate() + days);
+      return d;
+    }
+
+    function startOfWeekMonday(date) {
+      const d = cloneDate(date);
+      const day = d.getDay();
+      const diff = day === 0 ? -6 : 1 - day;
+      return addDays(d, diff);
+    }
+
+    function sameDate(a, b) {
+      return a && b && a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+    }
+
+    function formatDateShort(date) {
+      return `${String(date.getDate()).padStart(2, '0')}.${String(date.getMonth() + 1).padStart(2, '0')}`;
+    }
+
+    function formatDateRange(start, end) {
+      if (sameDate(start, end)) return formatDateShort(start);
+      return `${formatDateShort(start)}–${formatDateShort(end)}`;
+    }
+
+    function formatSlideDate(date) {
+      return `${date.getDate()} ${RU_MONTHS[date.getMonth()]} ${date.getFullYear()} года`;
+    }
+
+    function parseWeekFromFilename(filename, availableYears = []) {
+      const normalized = filename.replace(/_/g, '.');
+      const match = normalized.match(/(\d{2})\.(\d{2}).*?(\d{2})\.(\d{2})/);
+      if (!match) return null;
+      const d1 = Number(match[1]);
+      const m1 = Number(match[2]);
+      const d2 = Number(match[3]);
+      const m2 = Number(match[4]);
+      const year = availableYears.length ? Math.max(...availableYears) : new Date().getFullYear();
+      const start = new Date(year, m1 - 1, d1);
+      const endYear = m2 < m1 ? year + 1 : year;
+      const end = new Date(endYear, m2 - 1, d2);
+      if (Number.isNaN(start) || Number.isNaN(end)) return null;
+      return { start, end };
+    }
+
+    function detectHeaderRow(rows) {
+      return rows.findIndex(row => {
+        const normalized = row.map(normalizeText);
+        return normalized.includes('название мероприятия') &&
+               normalized.includes('дата начала') &&
+               normalized.includes('дата завершения');
+      });
+    }
+
+    function buildHeaderMap(headerRow) {
+      const findIndex = (predicate) => headerRow.findIndex((name, idx) => predicate(normalizeText(name), idx));
+      const placeIndexes = headerRow
+        .map((name, idx) => ({ idx, key: normalizeText(name) }))
+        .filter(item => item.key === 'место проведения')
+        .map(item => item.idx);
+
+      return {
+        city: placeIndexes[0] ?? -1,
+        course: findIndex(name => name === 'название мероприятия'),
+        start: findIndex(name => name === 'дата начала'),
+        end: findIndex(name => name === 'дата завершения'),
+        trainer: findIndex(name => name.includes('кт/сопровождающий')),
+      };
+    }
+
+    function detectBestWeek(courses) {
+      const minDate = courses.reduce((min, c) => c.start < min ? c.start : min, courses[0].start);
+      const maxDate = courses.reduce((max, c) => c.end > max ? c.end : max, courses[0].end);
+      let current = startOfWeekMonday(addDays(minDate, -7));
+      const finish = addDays(maxDate, 7);
+
+      let best = { score: -1, start: current, end: addDays(current, 4) };
+      while (current <= finish) {
+        let score = 0;
+        for (let i = 0; i < 5; i++) {
+          const day = addDays(current, i);
+          score += courses.filter(c => c.start <= day && c.end >= day).length;
+        }
+        if (score > best.score) {
+          best = { score, start: current, end: addDays(current, 4) };
+        }
+        current = addDays(current, 7);
+      }
+      return best;
+    }
+
+    function extractCourses(workbook, fileName) {
+      const sheetName = workbook.SheetNames.includes('Источник') ? 'Источник' : workbook.SheetNames[0];
+      const sheet = workbook.Sheets[sheetName];
+      const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, raw: true, defval: '' });
+      const headerIndex = detectHeaderRow(rows);
+      if (headerIndex === -1) throw new Error('Не удалось найти строку заголовков на листе «Источник».');
+
+      const header = rows[headerIndex].map(cleanText);
+      const map = buildHeaderMap(header);
+      if ([map.city, map.course, map.start, map.end, map.trainer].some(v => v === -1)) {
+        throw new Error('Не удалось определить нужные столбцы: город, курс, тренер, дата начала, дата завершения.');
+      }
+
+      const allDataRows = rows.slice(headerIndex + 1);
+      const courses = [];
+
+      for (const row of allDataRows) {
+        const city = cleanText(row[map.city]);
+        if (!city || normalizeText(city) !== 'нижнекамск') continue;
+
+        const course = cleanText(row[map.course]);
+        const trainer = cleanText(row[map.trainer]);
+        const start = excelDateToJS(row[map.start]);
+        const end = excelDateToJS(row[map.end]);
+
+        if (!course || !trainer || !start || !end) continue;
+
+        courses.push({
+          city,
+          course,
+          trainer,
+          start,
+          end: end < start ? start : end
+        });
+      }
+
+      if (!courses.length) throw new Error('В файле не найдено ни одной строки по Нижнекамску.');
+
+      const years = [...new Set(courses.flatMap(c => [c.start.getFullYear(), c.end.getFullYear()]))];
+      let week = parseWeekFromFilename(fileName, years);
+      if (!week) week = detectBestWeek(courses);
+
+      const monday = startOfWeekMonday(week.start);
+      const days = Array.from({ length: 5 }, (_, i) => addDays(monday, i));
+
+      return { courses, days };
+    }
+
+    function splitLongText(text, chunkSize = 44) {
+      const words = cleanText(text).split(' ');
+      const lines = [];
+      let current = '';
+      for (const word of words) {
+        const next = current ? current + ' ' + word : word;
+        if (next.length > chunkSize && current) {
+          lines.push(current);
+          current = word;
+        } else {
+          current = next;
+        }
+      }
+      if (current) lines.push(current);
+      return lines.join('\n');
+    }
+
+    function buildDayCourses(courses, day) {
+      return courses
+        .filter(c => c.start <= day && c.end >= day)
+        .sort((a, b) => a.start - b.start || a.course.localeCompare(b.course, 'ru'));
+    }
+
+    function addTemplateChrome(slide, day) {
+      slide.background = { color: 'F5F7F8' };
+
+      for (let i = 0; i < 7; i++) {
+        slide.addShape(pptx.ShapeType.hexagon, {
+          x: 11.6 + (i % 3) * 0.45,
+          y: -0.05 + Math.floor(i / 3) * 0.28,
+          w: 0.45,
+          h: 0.28,
+          line: { color: '9EB2C0', width: 1 },
+          fill: { color: 'F5F7F8', transparency: 100 },
+          rotate: 12
+        });
+      }
+
+      slide.addText('СИБУР', {
+        x: 0.05, y: 0.03, w: 1.2, h: 0.28,
+        fontFace: 'Arial', fontSize: 20, bold: true, color: '008A95', margin: 0
+      });
+      slide.addText('ИНТЕХ НК', {
+        x: 0.05, y: 0.28, w: 1.05, h: 0.18,
+        fontFace: 'Arial', fontSize: 10, bold: true, color: '0B4F56', margin: 0
+      });
+      slide.addShape(pptx.ShapeType.line, {
+        x: 0.05, y: 0.49, w: 1.15, h: 0,
+        line: { color: '0B8F9A', width: 1.2 }
+      });
+      slide.addShape(pptx.ShapeType.ellipse, {
+        x: 1.16, y: 0.465, w: 0.04, h: 0.04,
+        line: { color: '0B8F9A', width: 0.8 },
+        fill: { color: '0B8F9A' }
+      });
+
+      slide.addShape(pptx.ShapeType.rect, {
+        x: 1.55, y: 0.22, w: 10.35, h: 0.36,
+        fill: { color: '0B7E88' }, line: { color: '0B7E88', transparency: 100 }
+      });
+      slide.addText('Расписание обучений', {
+        x: 4.45, y: 0.26, w: 3.4, h: 0.22,
+        align: 'center', fontFace: 'Arial', fontSize: 18, bold: true, color: 'FFFFFF', margin: 0
+      });
+
+      slide.addShape(pptx.ShapeType.rect, {
+        x: 1.55, y: 0.58, w: 11.7, h: 0.3,
+        fill: { color: '0A98A4' }, line: { color: '0A98A4', transparency: 100 }
+      });
+      slide.addText(formatSlideDate(day), {
+        x: 4.55, y: 0.62, w: 3.4, h: 0.18,
+        align: 'center', fontFace: 'Arial', fontSize: 13, bold: true, color: 'FFFFFF', margin: 0
+      });
+
+      slide.addShape(pptx.ShapeType.line, {
+        x: 0.2, y: 0.89, w: 13.05, h: 0,
+        line: { color: '111111', width: 1.1 }
+      });
+
+      const headerY = 0.9;
+      const colXs = [0.22, 1.37, 2.57, 8.17, 10.57];
+      const colWs = [1.15, 1.2, 5.6, 2.4, 2.48];
+      const labels = ['Дата\nначала', 'Дата\nокончания', 'Программа обучения', 'Преподаватель', 'Даты\nпроведения'];
+      for (let i = 0; i < labels.length; i++) {
+        slide.addShape(pptx.ShapeType.rect, {
+          x: colXs[i], y: headerY, w: colWs[i], h: 0.52,
+          fill: { color: 'A9C8CD' }, line: { color: 'FFFFFF', width: 1 }
+        });
+        slide.addText(labels[i], {
+          x: colXs[i] + 0.02, y: headerY + 0.08, w: colWs[i] - 0.04, h: 0.3,
+          fontFace: 'Arial', fontSize: 10, color: 'FFFFFF', align: 'center', valign: 'mid', margin: 0
+        });
+      }
+
+      slide.addText('Ежедневно для всех желающих в СИБУРИНТЕХ-НК проводится экскурсия по зданию с посещением учебных классов.', {
+        x: 1.85, y: 6.82, w: 9.8, h: 0.22,
+        fontFace: 'Arial', fontSize: 10.5, color: '111111', align: 'center', margin: 0
+      });
+      slide.addText([
+        { text: 'Место встречи: у расписания на 1 этаже в 11:00. ', options: { bold: true } },
+        { text: 'По вопросам экскурсии Вы можете обратиться в кабинет 3.15.' }
+      ], {
+        x: 1.65, y: 7.03, w: 10.2, h: 0.26,
+        fontFace: 'Arial', fontSize: 10.5, color: '111111', align: 'center', margin: 0
+      });
+    }
+
+    function renderDayRows(slide, dayCourses) {
+      const bodyTop = 1.43;
+      const bodyHeight = 4.85;
+      const rowCount = Math.max(dayCourses.length, 1);
+      const dense = rowCount > 10;
+      const fontSize = rowCount > 12 ? 10.5 : rowCount > 9 ? 11.5 : 12.5;
+      const rowH = Math.min(0.58, bodyHeight / Math.max(rowCount, 8));
+      const colXs = [0.22, 1.37, 2.57, 8.17, 10.57];
+      const colWs = [1.15, 1.2, 5.6, 2.4, 2.48];
+
+      for (let i = 0; i < Math.max(rowCount, 8); i++) {
+        const lineY = bodyTop + i * rowH;
+        slide.addShape(pptx.ShapeType.line, {
+          x: 0.22, y: lineY, w: 12.83, h: 0,
+          line: { color: '9CC6CC', width: 0.8 }
+        });
+      }
+      slide.addShape(pptx.ShapeType.line, {
+        x: 0.22, y: bodyTop + Math.max(rowCount, 8) * rowH, w: 12.83, h: 0,
+        line: { color: '9CC6CC', width: 0.8 }
+      });
+
+      dayCourses.forEach((course, idx) => {
+        const y = bodyTop + idx * rowH + 0.03;
+        const startText = formatDateShort(course.start);
+        const endText = formatDateShort(course.end);
+        const rangeText = formatDateRange(course.start, course.end);
+        const courseText = splitLongText(course.course, dense ? 52 : 44);
+        const trainerText = splitLongText(course.trainer.replace(/,\s*/g, ', '), dense ? 28 : 24);
+
+        slide.addText(startText, {
+          x: colXs[0], y, w: colWs[0], h: rowH - 0.04,
+          fontFace: 'Arial', fontSize, color: '111111', align: 'center', valign: 'mid', margin: 0, fit: 'shrink'
+        });
+        slide.addText(endText, {
+          x: colXs[1], y, w: colWs[1], h: rowH - 0.04,
+          fontFace: 'Arial', fontSize, color: '111111', align: 'center', valign: 'mid', margin: 0, fit: 'shrink'
+        });
+        slide.addText(courseText, {
+          x: colXs[2] + 0.02, y, w: colWs[2] - 0.04, h: rowH - 0.04,
+          fontFace: 'Arial', fontSize, color: '111111', align: 'left', valign: 'mid', margin: 0, fit: 'shrink'
+        });
+        slide.addText(trainerText, {
+          x: colXs[3] + 0.02, y, w: colWs[3] - 0.04, h: rowH - 0.04,
+          fontFace: 'Arial', fontSize, color: '111111', align: 'center', valign: 'mid', margin: 0, fit: 'shrink'
+        });
+        slide.addText(rangeText, {
+          x: colXs[4] + 0.02, y, w: colWs[4] - 0.04, h: rowH - 0.04,
+          fontFace: 'Arial', fontSize, color: '111111', align: 'center', valign: 'mid', margin: 0, fit: 'shrink'
+        });
+      });
+    }
+
+    async function generatePresentation(file) {
+      setStatus('Читаю Excel…');
+      const data = await file.arrayBuffer();
+      const workbook = XLSX.read(data, { type: 'array', cellDates: true });
+      const { courses, days } = extractCourses(workbook, file.name);
+
+      setStatus(`Найдено курсов по Нижнекамску: ${courses.length}.\nФормирую ${days.length} слайдов…`);
+
+      const pptx = new PptxGenJS();
+      pptx.layout = 'LAYOUT_WIDE';
+      pptx.author = 'OpenAI';
+      pptx.company = 'SIBURINTECH';
+      pptx.subject = 'Расписание обучения Нижнекамск';
+      pptx.title = 'Расписание обучения - Нижнекамск';
+      pptx.lang = 'ru-RU';
+      pptx.theme = { headFontFace: 'Arial', bodyFontFace: 'Arial', lang: 'ru-RU' };
+
+      days.forEach(day => {
+        const slide = pptx.addSlide();
+        addTemplateChrome(slide, day);
+        renderDayRows(slide, buildDayCourses(courses, day));
+      });
+
+      const fileName = `raspisanie-nizhnekamsk-${formatDateShort(days[0])}-${formatDateShort(days[4])}.pptx`;
+      setStatus('Скачиваю готовую презентацию…', 'success');
+      await pptx.writeFile({ fileName });
+      setStatus(`Готово. Презентация скачана: ${fileName}`, 'success');
+    }
+
+    generateBtn.addEventListener('click', async () => {
+      const file = fileInput.files && fileInput.files[0];
+      if (!file) {
+        setStatus('Сначала выбери Excel-файл.', 'error');
+        return;
+      }
+
+      generateBtn.disabled = true;
+      try {
+        await generatePresentation(file);
+      } catch (error) {
+        console.error(error);
+        setStatus('Ошибка: ' + (error && error.message ? error.message : 'не удалось обработать файл.'), 'error');
+      } finally {
+        generateBtn.disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>
