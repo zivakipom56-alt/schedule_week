@@ -168,6 +168,7 @@
     const generateBtn = document.getElementById('generateBtn');
 
     const LOGO_URL = 'https://raw.githubusercontent.com/zivakipom56-alt/schedule_week/main/logo%20sith.jpg';
+    const BG_TOP_RIGHT_URL = 'https://raw.githubusercontent.com/zivakipom56-alt/schedule_week/main/fon.jpg';
 
     const RU_MONTHS = [
       'января', 'февраля', 'марта', 'апреля', 'мая', 'июня',
@@ -413,10 +414,14 @@
       const courses = [];
 
       for (const row of allDataRows) {
-        const city = cleanText(row[map.city]);
-        if (!city || !normalizeText(city).includes('нижнекамск')) continue;
+        const placeRaw = cleanText(row[map.place]);
+        const cityRaw = cleanText(row[map.city]);
 
-        const place = cleanText(row[map.place]);
+        if (!placeRaw && !cityRaw) continue;
+
+        const combinedPlace = `${cityRaw} ${placeRaw}`.trim();
+        if (!normalizeText(combinedPlace).includes('нижнекамск')) continue;
+
         const course = cleanText(row[map.course]);
         const trainer = cleanText(row[map.trainer]);
         const start = excelDateToJS(row[map.start]);
@@ -424,11 +429,10 @@
 
         if (!course || !start || !end) continue;
 
-        const placeInfo = extractRoomAndFloor(place);
+        const placeInfo = extractRoomAndFloor(placeRaw || cityRaw || combinedPlace);
 
         courses.push({
-          city,
-          place,
+          place: placeRaw || cityRaw || combinedPlace,
           course,
           trainer,
           start,
@@ -453,36 +457,35 @@
     }
 
     function addTemplateChrome(slide, day) {
-      slide.background = { color: 'F5F7F8' };
+      slide.background = { color: 'FFFFFF' };
 
-      for (let i = 0; i < 7; i++) {
-        slide.addShape('hexagon', {
-          x: 11.6 + (i % 3) * 0.45,
-          y: -0.05 + Math.floor(i / 3) * 0.28,
-          w: 0.45,
-          h: 0.28,
-          line: { color: '9EB2C0', width: 1 },
-          fill: { color: 'F5F7F8', transparency: 100 },
-          rotate: 12
-        });
-      }
-
+      // фоновая картинка справа сверху
       slide.addImage({
-        path: LOGO_URL,
-        x: 0.05,
-        y: 0.03,
-        w: 1.2,
-        h: 0.52
+        path: BG_TOP_RIGHT_URL,
+        x: 9.55,
+        y: 0.0,
+        w: 3.78,
+        h: 1.25
       });
 
+      // логотип слева сверху
+      slide.addImage({
+        path: LOGO_URL,
+        x: 0.08,
+        y: 0.06,
+        w: 1.48,
+        h: 0.56
+      });
+
+      // верхняя темная плашка
       slide.addShape('rect', {
-        x: 1.55, y: 0.22, w: 10.35, h: 0.36,
+        x: 1.55, y: 0.22, w: 11.5, h: 0.36,
         fill: { color: '0B7E88' },
         line: { color: '0B7E88', transparency: 100 }
       });
 
       slide.addText('Расписание обучений', {
-        x: 4.45, y: 0.26, w: 3.4, h: 0.22,
+        x: 4.45, y: 0.26, w: 3.6, h: 0.22,
         align: 'center',
         fontFace: 'Arial',
         fontSize: 18,
@@ -491,14 +494,15 @@
         margin: 0
       });
 
+      // дата — ровно по ширине таблицы
       slide.addShape('rect', {
-        x: 1.55, y: 0.58, w: 11.7, h: 0.3,
+        x: 0.22, y: 0.58, w: 12.83, h: 0.3,
         fill: { color: '0A98A4' },
         line: { color: '0A98A4', transparency: 100 }
       });
 
       slide.addText(formatSlideDate(day), {
-        x: 4.55, y: 0.62, w: 3.4, h: 0.18,
+        x: 4.15, y: 0.62, w: 5.0, h: 0.18,
         align: 'center',
         fontFace: 'Arial',
         fontSize: 13,
