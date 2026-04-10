@@ -321,7 +321,7 @@
       slide.background = { color: 'F5F7F8' };
 
       for (let i = 0; i < 7; i++) {
-        slide.addShape(pptx.ShapeType.hexagon, {
+        slide.addShape(PptxGenJS.ShapeType.hexagon, {
           x: 11.6 + (i % 3) * 0.45,
           y: -0.05 + Math.floor(i / 3) * 0.28,
           w: 0.45,
@@ -340,17 +340,17 @@
         x: 0.05, y: 0.28, w: 1.05, h: 0.18,
         fontFace: 'Arial', fontSize: 10, bold: true, color: '0B4F56', margin: 0
       });
-      slide.addShape(pptx.ShapeType.line, {
+      slide.addShape(PptxGenJS.ShapeType.line, {
         x: 0.05, y: 0.49, w: 1.15, h: 0,
         line: { color: '0B8F9A', width: 1.2 }
       });
-      slide.addShape(pptx.ShapeType.ellipse, {
+      slide.addShape(PptxGenJS.ShapeType.ellipse, {
         x: 1.16, y: 0.465, w: 0.04, h: 0.04,
         line: { color: '0B8F9A', width: 0.8 },
         fill: { color: '0B8F9A' }
       });
 
-      slide.addShape(pptx.ShapeType.rect, {
+      slide.addShape(PptxGenJS.ShapeType.rect, {
         x: 1.55, y: 0.22, w: 10.35, h: 0.36,
         fill: { color: '0B7E88' }, line: { color: '0B7E88', transparency: 100 }
       });
@@ -359,7 +359,7 @@
         align: 'center', fontFace: 'Arial', fontSize: 18, bold: true, color: 'FFFFFF', margin: 0
       });
 
-      slide.addShape(pptx.ShapeType.rect, {
+      slide.addShape(PptxGenJS.ShapeType.rect, {
         x: 1.55, y: 0.58, w: 11.7, h: 0.3,
         fill: { color: '0A98A4' }, line: { color: '0A98A4', transparency: 100 }
       });
@@ -368,7 +368,7 @@
         align: 'center', fontFace: 'Arial', fontSize: 13, bold: true, color: 'FFFFFF', margin: 0
       });
 
-      slide.addShape(pptx.ShapeType.line, {
+      slide.addShape(PptxGenJS.ShapeType.line, {
         x: 0.2, y: 0.89, w: 13.05, h: 0,
         line: { color: '111111', width: 1.1 }
       });
@@ -378,7 +378,7 @@
       const colWs = [1.15, 1.2, 5.6, 2.4, 2.48];
       const labels = ['Дата\nначала', 'Дата\nокончания', 'Программа обучения', 'Преподаватель', 'Даты\nпроведения'];
       for (let i = 0; i < labels.length; i++) {
-        slide.addShape(pptx.ShapeType.rect, {
+        slide.addShape(PptxGenJS.ShapeType.rect, {
           x: colXs[i], y: headerY, w: colWs[i], h: 0.52,
           fill: { color: 'A9C8CD' }, line: { color: 'FFFFFF', width: 1 }
         });
@@ -413,12 +413,12 @@
 
       for (let i = 0; i < Math.max(rowCount, 8); i++) {
         const lineY = bodyTop + i * rowH;
-        slide.addShape(pptx.ShapeType.line, {
+        slide.addShape(PptxGenJS.ShapeType.line, {
           x: 0.22, y: lineY, w: 12.83, h: 0,
           line: { color: '9CC6CC', width: 0.8 }
         });
       }
-      slide.addShape(pptx.ShapeType.line, {
+      slide.addShape(PptxGenJS.ShapeType.line, {
         x: 0.22, y: bodyTop + Math.max(rowCount, 8) * rowH, w: 12.83, h: 0,
         line: { color: '9CC6CC', width: 0.8 }
       });
