@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Excel → PPTX | Расписание Нижнекамск</title>
+  <title>Excel → PPTX | Расписание обучения</title>
   <style>
     :root {
       --bg: #f4f7f8;
@@ -17,20 +17,68 @@
       --ok: #146c43;
     }
     * { box-sizing: border-box; }
-    body { margin: 0; font-family: Arial, Helvetica, sans-serif; background: var(--bg); color: var(--text); }
-    .wrap { max-width: 920px; margin: 32px auto; padding: 0 16px; }
-    .card { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 24px; box-shadow: 0 10px 24px rgba(0,0,0,.04); }
+    body {
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+    .wrap {
+      max-width: 920px;
+      margin: 32px auto;
+      padding: 0 16px;
+    }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 24px;
+      box-shadow: 0 10px 24px rgba(0,0,0,.04);
+    }
     h1 { margin: 0 0 8px; font-size: 28px; }
     p { margin: 0 0 12px; line-height: 1.45; color: var(--muted); }
     .row { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin-top: 20px; }
-    .filebox { flex: 1 1 340px; border: 1px dashed #b7c8ce; border-radius: 12px; padding: 16px; background: #fbfcfd; }
+    .filebox {
+      flex: 1 1 340px;
+      border: 1px dashed #b7c8ce;
+      border-radius: 12px;
+      padding: 16px;
+      background: #fbfcfd;
+    }
     input[type="file"] { width: 100%; }
-    button { border: 0; border-radius: 12px; padding: 14px 18px; font-size: 16px; font-weight: 700; cursor: pointer; background: linear-gradient(90deg, var(--brand-dark), var(--brand)); color: #fff; min-width: 220px; }
+    button {
+      border: 0;
+      border-radius: 12px;
+      padding: 14px 18px;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      background: linear-gradient(90deg, var(--brand-dark), var(--brand));
+      color: #fff;
+      min-width: 220px;
+    }
     button:disabled { opacity: .6; cursor: not-allowed; }
-    .status { margin-top: 18px; padding: 14px 16px; border-radius: 12px; background: #f6fafb; border: 1px solid var(--line); color: var(--text); white-space: pre-wrap; }
-    .status.error { color: var(--danger); border-color: #f1c6c6; background: #fff6f6; }
-    .status.success { color: var(--ok); border-color: #c7e6d6; background: #f4fcf7; }
+    .status {
+      margin-top: 18px;
+      padding: 14px 16px;
+      border-radius: 12px;
+      background: #f6fafb;
+      border: 1px solid var(--line);
+      color: var(--text);
+      white-space: pre-wrap;
+    }
+    .status.error {
+      color: var(--danger);
+      border-color: #f1c6c6;
+      background: #fff6f6;
+    }
+    .status.success {
+      color: var(--ok);
+      border-color: #c7e6d6;
+      background: #f4fcf7;
+    }
     .small { font-size: 13px; color: var(--muted); margin-top: 10px; }
+    .hint { margin-top: 24px; padding-top: 18px; border-top: 1px solid var(--line); }
     code { background: #eef4f6; padding: 2px 6px; border-radius: 6px; }
   </style>
 </head>
@@ -38,19 +86,22 @@
   <div class="wrap">
     <div class="card">
       <h1>Конвертер Excel → PPTX</h1>
-      <p>Загрузи недельный Excel-график. Приложение возьмёт только Нижнекамск, разложит курсы по дням недели и скачает готовую презентацию.</p>
+      <p>Загрузи недельный Excel-график. Приложение возьмёт только курсы Нижнекамска, разложит их по дням недели и скачает готовую презентацию PowerPoint.</p>
 
       <div class="row">
         <div class="filebox">
           <label for="excelFile"><strong>Excel-файл графика</strong></label>
-          <div class="small">Поддерживаются <code>.xlsx</code>, <code>.xls</code>, <code>.xlsm</code>.</div>
+          <div class="small">Поддерживаются <code>.xlsx</code> и <code>.xls</code>.</div>
           <input id="excelFile" type="file" accept=".xlsx,.xls,.xlsm" />
         </div>
         <button id="generateBtn">Сгенерировать PPTX</button>
       </div>
 
       <div id="status" class="status">Ожидаю Excel-файл.</div>
-      <div class="small">Логика заточена под лист <code>Источник</code> и колонки: <code>Место проведения</code>, <code>Название мероприятия</code>, <code>Дата начала</code>, <code>Дата завершения</code>, <code>КТ/сопровождающий</code>.</div>
+
+      <div class="hint small">
+        Текущая логика ищет лист <code>Источник</code>, затем автоматически находит строку заголовков и берёт только строки, где город = <code>Нижнекамск</code>.
+      </div>
     </div>
   </div>
 
@@ -68,18 +119,12 @@
       statusEl.className = 'status' + (type ? ' ' + type : '');
     }
 
+    function normalizeText(value) {
+      return String(value ?? '').replace(/\u00A0/g, ' ').replace(/\s+/g, ' ').trim().toLowerCase();
+    }
+
     function cleanText(value) {
       return String(value ?? '').replace(/\u00A0/g, ' ').replace(/\s+/g, ' ').trim();
-    }
-
-    function normalizeText(value) {
-      return cleanText(value).toLowerCase();
-    }
-
-    function firstTrainer(value) {
-      const text = cleanText(value);
-      if (!text) return '';
-      return cleanText(text.split(',')[0]);
     }
 
     function excelDateToJS(value) {
@@ -130,6 +175,11 @@
       return `${String(date.getDate()).padStart(2, '0')}.${String(date.getMonth() + 1).padStart(2, '0')}`;
     }
 
+    function formatDateRange(start, end) {
+      if (sameDate(start, end)) return formatDateShort(start);
+      return `${formatDateShort(start)}–${formatDateShort(end)}`;
+    }
+
     function formatSlideDate(date) {
       return `${date.getDate()} ${RU_MONTHS[date.getMonth()]} ${date.getFullYear()} года`;
     }
@@ -143,10 +193,11 @@
       const d2 = Number(match[3]);
       const m2 = Number(match[4]);
       const year = availableYears.length ? Math.max(...availableYears) : new Date().getFullYear();
-      return {
-        start: new Date(year, m1 - 1, d1),
-        end: new Date((m2 < m1 ? year + 1 : year), m2 - 1, d2)
-      };
+      const start = new Date(year, m1 - 1, d1);
+      const endYear = m2 < m1 ? year + 1 : year;
+      const end = new Date(endYear, m2 - 1, d2);
+      if (Number.isNaN(start) || Number.isNaN(end)) return null;
+      return { start, end };
     }
 
     function detectHeaderRow(rows) {
@@ -154,20 +205,23 @@
         const normalized = row.map(normalizeText);
         return normalized.includes('название мероприятия') &&
                normalized.includes('дата начала') &&
-               normalized.includes('дата завершения') &&
-               normalized.filter(v => v === 'место проведения').length >= 1;
+               normalized.includes('дата завершения');
       });
     }
 
     function buildHeaderMap(headerRow) {
-      const indexes = headerRow.map((name, idx) => ({ idx, key: normalizeText(name) }));
-      const placeCols = indexes.filter(item => item.key === 'место проведения').map(item => item.idx);
+      const findIndex = (predicate) => headerRow.findIndex((name, idx) => predicate(normalizeText(name), idx));
+      const placeIndexes = headerRow
+        .map((name, idx) => ({ idx, key: normalizeText(name) }))
+        .filter(item => item.key === 'место проведения')
+        .map(item => item.idx);
+
       return {
-        city: placeCols[0] ?? -1,
-        course: indexes.find(item => item.key === 'название мероприятия')?.idx ?? -1,
-        start: indexes.find(item => item.key === 'дата начала')?.idx ?? -1,
-        end: indexes.find(item => item.key === 'дата завершения')?.idx ?? -1,
-        trainer: indexes.find(item => item.key.includes('кт/сопровождающий'))?.idx ?? -1,
+        city: placeIndexes[0] ?? -1,
+        course: findIndex(name => name === 'название мероприятия'),
+        start: findIndex(name => name === 'дата начала'),
+        end: findIndex(name => name === 'дата завершения'),
+        trainer: findIndex(name => name.includes('кт/сопровождающий')),
       };
     }
 
@@ -176,6 +230,7 @@
       const maxDate = courses.reduce((max, c) => c.end > max ? c.end : max, courses[0].end);
       let current = startOfWeekMonday(addDays(minDate, -7));
       const finish = addDays(maxDate, 7);
+
       let best = { score: -1, start: current, end: addDays(current, 4) };
       while (current <= finish) {
         let score = 0;
@@ -183,7 +238,9 @@
           const day = addDays(current, i);
           score += courses.filter(c => c.start <= day && c.end >= day).length;
         }
-        if (score > best.score) best = { score, start: current, end: addDays(current, 4) };
+        if (score > best.score) {
+          best = { score, start: current, end: addDays(current, 4) };
+        }
         current = addDays(current, 7);
       }
       return best;
@@ -199,18 +256,21 @@
       const header = rows[headerIndex].map(cleanText);
       const map = buildHeaderMap(header);
       if ([map.city, map.course, map.start, map.end, map.trainer].some(v => v === -1)) {
-        throw new Error('Не удалось определить нужные столбцы в Excel.');
+        throw new Error('Не удалось определить нужные столбцы: город, курс, тренер, дата начала, дата завершения.');
       }
 
+      const allDataRows = rows.slice(headerIndex + 1);
       const courses = [];
-      for (const row of rows.slice(headerIndex + 1)) {
+
+      for (const row of allDataRows) {
         const city = cleanText(row[map.city]);
-        if (normalizeText(city) !== 'нижнекамск') continue;
+        if (!city || normalizeText(city) !== 'нижнекамск') continue;
 
         const course = cleanText(row[map.course]);
-        const trainer = firstTrainer(row[map.trainer]);
+        const trainer = cleanText(row[map.trainer]);
         const start = excelDateToJS(row[map.start]);
         const end = excelDateToJS(row[map.end]);
+
         if (!course || !trainer || !start || !end) continue;
 
         courses.push({
@@ -218,7 +278,7 @@
           course,
           trainer,
           start,
-          end: end < start ? start : end,
+          end: end < start ? start : end
         });
       }
 
@@ -226,13 +286,29 @@
 
       const years = [...new Set(courses.flatMap(c => [c.start.getFullYear(), c.end.getFullYear()]))];
       let week = parseWeekFromFilename(fileName, years);
-      if (!week || Number.isNaN(week.start) || Number.isNaN(week.end)) {
-        week = detectBestWeek(courses);
-      }
+      if (!week) week = detectBestWeek(courses);
 
       const monday = startOfWeekMonday(week.start);
       const days = Array.from({ length: 5 }, (_, i) => addDays(monday, i));
+
       return { courses, days };
+    }
+
+    function splitLongText(text, chunkSize = 44) {
+      const words = cleanText(text).split(' ');
+      const lines = [];
+      let current = '';
+      for (const word of words) {
+        const next = current ? current + ' ' + word : word;
+        if (next.length > chunkSize && current) {
+          lines.push(current);
+          current = word;
+        } else {
+          current = next;
+        }
+      }
+      if (current) lines.push(current);
+      return lines.join('\n');
     }
 
     function buildDayCourses(courses, day) {
@@ -241,110 +317,139 @@
         .sort((a, b) => a.start - b.start || a.course.localeCompare(b.course, 'ru'));
     }
 
-    function fitFontSizeByCount(count) {
-      if (count <= 6) return 18;
-      if (count <= 8) return 16;
-      if (count <= 10) return 14;
-      if (count <= 13) return 12;
-      return 10.5;
-    }
-
     function addTemplateChrome(slide, day) {
-      slide.background = { color: 'F6F7F8' };
+      slide.background = { color: 'F5F7F8' };
 
       for (let i = 0; i < 7; i++) {
-        slide.addShape("hexagon", {
-          x: 11.55 + (i % 3) * 0.48,
-          y: -0.03 + Math.floor(i / 3) * 0.30,
-          w: 0.46,
+        slide.addShape('hexagon', {
+          x: 11.6 + (i % 3) * 0.45,
+          y: -0.05 + Math.floor(i / 3) * 0.28,
+          w: 0.45,
           h: 0.28,
-          line: { color: 'A9B7C2', width: 1 },
-          fill: { color: 'F6F7F8', transparency: 100 },
+          line: { color: '9EB2C0', width: 1 },
+          fill: { color: 'F5F7F8', transparency: 100 },
           rotate: 12
         });
       }
 
       slide.addText('СИБУР', {
-        x: 0.06, y: 0.04, w: 1.25, h: 0.28,
-        fontFace: 'Arial', fontSize: 20, bold: true, color: '00A1A8', margin: 0
+        x: 0.05, y: 0.03, w: 1.2, h: 0.28,
+        fontFace: 'Arial', fontSize: 20, bold: true, color: '008A95', margin: 0
       });
       slide.addText('ИНТЕХ НК', {
-        x: 0.06, y: 0.29, w: 1.10, h: 0.18,
+        x: 0.05, y: 0.28, w: 1.05, h: 0.18,
         fontFace: 'Arial', fontSize: 10, bold: true, color: '0B4F56', margin: 0
       });
-      slide.addShape("line", {
-        x: 0.06, y: 0.49, w: 1.15, h: 0,
-        line: { color: '13A4AA', width: 1.2 }
+      slide.addShape('line', {
+        x: 0.05, y: 0.49, w: 1.15, h: 0,
+        line: { color: '0B8F9A', width: 1.2 }
       });
-      slide.addShape("ellipse", {
-        x: 1.17, y: 0.465, w: 0.04, h: 0.04,
-        line: { color: '13A4AA', width: 0.8 },
-        fill: { color: '13A4AA' }
+      slide.addShape('ellipse', {
+        x: 1.16, y: 0.465, w: 0.04, h: 0.04,
+        line: { color: '0B8F9A', width: 0.8 },
+        fill: { color: '0B8F9A' }
       });
 
-      slide.addShape("rect", {
-        x: 1.55, y: 0.23, w: 10.35, h: 0.36,
-        fill: { color: '0C7F88' }, line: { color: '0C7F88', transparency: 100 }
+      slide.addShape('rect', {
+        x: 1.55, y: 0.22, w: 10.35, h: 0.36,
+        fill: { color: '0B7E88' }, line: { color: '0B7E88', transparency: 100 }
       });
       slide.addText('Расписание обучений', {
-        x: 4.3, y: 0.27, w: 3.8, h: 0.2,
+        x: 4.45, y: 0.26, w: 3.4, h: 0.22,
         align: 'center', fontFace: 'Arial', fontSize: 18, bold: true, color: 'FFFFFF', margin: 0
       });
 
-      slide.addShape("rect", {
-        x: 1.55, y: 0.59, w: 11.65, h: 0.30,
-        fill: { color: '10A4AE' }, line: { color: '10A4AE', transparency: 100 }
+      slide.addShape('rect', {
+        x: 1.55, y: 0.58, w: 11.7, h: 0.3,
+        fill: { color: '0A98A4' }, line: { color: '0A98A4', transparency: 100 }
       });
       slide.addText(formatSlideDate(day), {
-        x: 4.25, y: 0.63, w: 4.2, h: 0.18,
+        x: 4.55, y: 0.62, w: 3.4, h: 0.18,
         align: 'center', fontFace: 'Arial', fontSize: 13, bold: true, color: 'FFFFFF', margin: 0
       });
 
-      slide.addShape("line", {
-        x: 0.22, y: 0.93, w: 12.85, h: 0,
-        line: { color: '1B1B1B', width: 1.1 }
+      slide.addShape('line', {
+        x: 0.2, y: 0.89, w: 13.05, h: 0,
+        line: { color: '111111', width: 1.1 }
       });
 
+      const headerY = 0.9;
+      const colXs = [0.22, 1.37, 2.57, 8.17, 10.57];
+      const colWs = [1.15, 1.2, 5.6, 2.4, 2.48];
+      const labels = ['Дата\nначала', 'Дата\nокончания', 'Программа обучения', 'Преподаватель', 'Даты\nпроведения'];
+      for (let i = 0; i < labels.length; i++) {
+        slide.addShape('rect', {
+          x: colXs[i], y: headerY, w: colWs[i], h: 0.52,
+          fill: { color: 'A9C8CD' }, line: { color: 'FFFFFF', width: 1 }
+        });
+        slide.addText(labels[i], {
+          x: colXs[i] + 0.02, y: headerY + 0.08, w: colWs[i] - 0.04, h: 0.3,
+          fontFace: 'Arial', fontSize: 10, color: 'FFFFFF', align: 'center', valign: 'mid', margin: 0
+        });
+      }
+
       slide.addText('Ежедневно для всех желающих в СИБУРИНТЕХ-НК проводится экскурсия по зданию с посещением учебных классов.', {
-        x: 1.55, y: 6.78, w: 10.6, h: 0.22,
+        x: 1.85, y: 6.82, w: 9.8, h: 0.22,
         fontFace: 'Arial', fontSize: 10.5, color: '111111', align: 'center', margin: 0
       });
       slide.addText([
         { text: 'Место встречи: у расписания на 1 этаже в 11:00. ', options: { bold: true } },
         { text: 'По вопросам экскурсии Вы можете обратиться в кабинет 3.15.' }
       ], {
-        x: 1.35, y: 6.99, w: 11.0, h: 0.26,
+        x: 1.65, y: 7.03, w: 10.2, h: 0.26,
         fontFace: 'Arial', fontSize: 10.5, color: '111111', align: 'center', margin: 0
       });
     }
 
-    function renderList(slide, dayCourses) {
-      if (!dayCourses.length) return;
+    function renderDayRows(slide, dayCourses) {
+      const bodyTop = 1.43;
+      const bodyHeight = 4.85;
+      const rowCount = Math.max(dayCourses.length, 1);
+      const dense = rowCount > 10;
+      const fontSize = rowCount > 12 ? 10.5 : rowCount > 9 ? 11.5 : 12.5;
+      const rowH = Math.min(0.58, bodyHeight / Math.max(rowCount, 8));
+      const colXs = [0.22, 1.37, 2.57, 8.17, 10.57];
+      const colWs = [1.15, 1.2, 5.6, 2.4, 2.48];
 
-      const topY = 1.15;
-      const bottomY = 6.55;
-      const count = dayCourses.length;
-      const available = bottomY - topY;
-      const rowH = available / count;
-      const fontSize = fitFontSizeByCount(count);
+      for (let i = 0; i < Math.max(rowCount, 8); i++) {
+        const lineY = bodyTop + i * rowH;
+        slide.addShape('line', {
+          x: 0.22, y: lineY, w: 12.83, h: 0,
+          line: { color: '9CC6CC', width: 0.8 }
+        });
+      }
+      slide.addShape('line', {
+        x: 0.22, y: bodyTop + Math.max(rowCount, 8) * rowH, w: 12.83, h: 0,
+        line: { color: '9CC6CC', width: 0.8 }
+      });
 
-      dayCourses.forEach((item, idx) => {
-        const y = topY + idx * rowH;
-        const text = `${item.course} — ${item.trainer}`;
-        slide.addText(text, {
-          x: 0.62,
-          y,
-          w: 11.95,
-          h: rowH,
-          fontFace: 'Arial',
-          fontSize,
-          color: '111111',
-          bold: false,
-          breakLine: false,
-          margin: 0,
-          valign: 'mid',
-          align: 'left',
-          fit: 'shrink'
+      dayCourses.forEach((course, idx) => {
+        const y = bodyTop + idx * rowH + 0.03;
+        const startText = formatDateShort(course.start);
+        const endText = formatDateShort(course.end);
+        const rangeText = formatDateRange(course.start, course.end);
+        const courseText = splitLongText(course.course, dense ? 52 : 44);
+        const trainerText = splitLongText(course.trainer.replace(/,\s*/g, ', '), dense ? 28 : 24);
+
+        slide.addText(startText, {
+          x: colXs[0], y, w: colWs[0], h: rowH - 0.04,
+          fontFace: 'Arial', fontSize, color: '111111', align: 'center', valign: 'mid', margin: 0, fit: 'shrink'
+        });
+        slide.addText(endText, {
+          x: colXs[1], y, w: colWs[1], h: rowH - 0.04,
+          fontFace: 'Arial', fontSize, color: '111111', align: 'center', valign: 'mid', margin: 0, fit: 'shrink'
+        });
+        slide.addText(courseText, {
+          x: colXs[2] + 0.02, y, w: colWs[2] - 0.04, h: rowH - 0.04,
+          fontFace: 'Arial', fontSize, color: '111111', align: 'left', valign: 'mid', margin: 0, fit: 'shrink'
+        });
+        slide.addText(trainerText, {
+          x: colXs[3] + 0.02, y, w: colWs[3] - 0.04, h: rowH - 0.04,
+          fontFace: 'Arial', fontSize, color: '111111', align: 'center', valign: 'mid', margin: 0, fit: 'shrink'
+        });
+        slide.addText(rangeText, {
+          x: colXs[4] + 0.02, y, w: colWs[4] - 0.04, h: rowH - 0.04,
+          fontFace: 'Arial', fontSize, color: '111111', align: 'center', valign: 'mid', margin: 0, fit: 'shrink'
         });
       });
     }
@@ -354,7 +459,6 @@
       const data = await file.arrayBuffer();
       const workbook = XLSX.read(data, { type: 'array', cellDates: true });
       const { courses, days } = extractCourses(workbook, file.name);
-      const dayMap = days.map(day => ({ day, items: buildDayCourses(courses, day) }));
 
       setStatus(`Найдено курсов по Нижнекамску: ${courses.length}.\nФормирую ${days.length} слайдов…`);
 
@@ -367,10 +471,10 @@
       pptx.lang = 'ru-RU';
       pptx.theme = { headFontFace: 'Arial', bodyFontFace: 'Arial', lang: 'ru-RU' };
 
-      dayMap.forEach(({ day, items }) => {
+      days.forEach(day => {
         const slide = pptx.addSlide();
         addTemplateChrome(slide, day);
-        renderList(slide, items);
+        renderDayRows(slide, buildDayCourses(courses, day));
       });
 
       const fileName = `raspisanie-nizhnekamsk-${formatDateShort(days[0])}-${formatDateShort(days[4])}.pptx`;
@@ -385,6 +489,7 @@
         setStatus('Сначала выбери Excel-файл.', 'error');
         return;
       }
+
       generateBtn.disabled = true;
       try {
         await generatePresentation(file);
