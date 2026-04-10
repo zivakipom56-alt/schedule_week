@@ -287,13 +287,52 @@
         .map(item => item.idx);
 
       return {
-        city: placeIndexes[0] ?? -1,
-        place: placeIndexes[0] ?? -1,
+        cityCandidates: placeIndexes,
         course: findIndex(name => name === 'название мероприятия'),
         start: findIndex(name => name === 'дата начала'),
         end: findIndex(name => name === 'дата завершения'),
         trainer: findIndex(name => name.includes('кт/сопровождающий'))
       };
+    }
+
+    function chooseBestPlaceColumn(rows, startRowIndex, candidateIndexes) {
+      if (!candidateIndexes || !candidateIndexes.length) return -1;
+      if (candidateIndexes.length === 1) return candidateIndexes[0];
+
+      const scoreColumn = (colIdx) => {
+        let score = 0;
+
+        for (let r = startRowIndex; r < Math.min(rows.length, startRowIndex + 400); r++) {
+          const value = cleanText(rows[r]?.[colIdx]);
+          if (!value) continue;
+
+          const lowered = value.toLowerCase();
+
+          if (lowered.includes('нижнекамск')) score += 1;
+          if (lowered.includes('полигоны')) score += 5;
+          if (/\b\d\.\d{1,2}\b/.test(value)) score += 5;
+          if (value.includes('СИБУРИНТЕХ')) score += 1;
+        }
+
+        return score;
+      };
+
+      let bestIdx = candidateIndexes[0];
+      let bestScore = -1;
+
+      for (const idx of candidateIndexes) {
+        const score = scoreColumn(idx);
+        if (score > bestScore) {
+          bestScore = score;
+          bestIdx = idx;
+        }
+      }
+
+      if (bestScore <= 0) {
+        return candidateIndexes.includes(6) ? 6 : candidateIndexes[0];
+      }
+
+      return bestIdx;
     }
 
     function detectBestWeek(courses) {
@@ -406,7 +445,9 @@
       const header = rows[headerIndex].map(cleanText);
       const map = buildHeaderMap(header);
 
-      if ([map.city, map.place, map.course, map.start, map.end, map.trainer].some(v => v === -1)) {
+      const placeColumnIndex = chooseBestPlaceColumn(rows, headerIndex + 1, map.cityCandidates);
+
+      if ([placeColumnIndex, map.course, map.start, map.end, map.trainer].some(v => v === -1)) {
         throw new Error('Не удалось определить нужные столбцы в Excel.');
       }
 
@@ -414,13 +455,10 @@
       const courses = [];
 
       for (const row of allDataRows) {
-        const placeRaw = cleanText(row[map.place]);
-        const cityRaw = cleanText(row[map.city]);
+        const placeRaw = cleanText(row[placeColumnIndex]);
+        if (!placeRaw) continue;
 
-        if (!placeRaw && !cityRaw) continue;
-
-        const combinedPlace = `${cityRaw} ${placeRaw}`.trim();
-        if (!normalizeText(combinedPlace).includes('нижнекамск')) continue;
+        if (!normalizeText(placeRaw).includes('нижнекамск')) continue;
 
         const course = cleanText(row[map.course]);
         const trainer = cleanText(row[map.trainer]);
@@ -429,10 +467,10 @@
 
         if (!course || !start || !end) continue;
 
-        const placeInfo = extractRoomAndFloor(placeRaw || cityRaw || combinedPlace);
+        const placeInfo = extractRoomAndFloor(placeRaw);
 
         courses.push({
-          place: placeRaw || cityRaw || combinedPlace,
+          place: placeRaw,
           course,
           trainer,
           start,
@@ -459,7 +497,6 @@
     function addTemplateChrome(slide, day) {
       slide.background = { color: 'FFFFFF' };
 
-      // фоновая картинка справа сверху
       slide.addImage({
         path: BG_TOP_RIGHT_URL,
         x: 9.55,
@@ -468,7 +505,6 @@
         h: 1.25
       });
 
-      // логотип слева сверху
       slide.addImage({
         path: LOGO_URL,
         x: 0.08,
@@ -477,7 +513,6 @@
         h: 0.56
       });
 
-      // верхняя темная плашка
       slide.addShape('rect', {
         x: 1.55, y: 0.22, w: 11.5, h: 0.36,
         fill: { color: '0B7E88' },
@@ -494,7 +529,6 @@
         margin: 0
       });
 
-      // дата — ровно по ширине таблицы
       slide.addShape('rect', {
         x: 0.22, y: 0.58, w: 12.83, h: 0.3,
         fill: { color: '0A98A4' },
