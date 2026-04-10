@@ -3,14 +3,13 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Excel → PPTX | Расписание обучений</title>
+  <title>Excel → PPTX</title>
   <style>
     :root {
-      --bg: #f3f7f8;
-      --bg-soft: #eef4f5;
-      --card: rgba(255, 255, 255, 0.88);
-      --text: #18343b;
-      --muted: #5c7278;
+      --bg: #f4f7f8;
+      --card: rgba(255, 255, 255, 0.9);
+      --text: #19353c;
+      --muted: #61767b;
       --line: rgba(15, 94, 102, 0.12);
       --brand: #0b8f9a;
       --brand-dark: #0b5860;
@@ -21,9 +20,9 @@
       --error: #b34747;
       --error-bg: #fff6f6;
       --error-line: #f0cccc;
-      --shadow: 0 14px 40px rgba(17, 55, 62, 0.08);
+      --shadow: 0 18px 40px rgba(18, 55, 62, 0.08);
       --radius-xl: 28px;
-      --radius-lg: 22px;
+      --radius-lg: 20px;
       --radius-md: 16px;
     }
 
@@ -33,205 +32,37 @@
       margin: 0;
       padding: 0;
       font-family: Inter, Arial, Helvetica, sans-serif;
-      background:
-        radial-gradient(circle at top right, rgba(11, 143, 154, 0.10), transparent 28%),
-        radial-gradient(circle at left top, rgba(11, 88, 96, 0.08), transparent 25%),
-        linear-gradient(180deg, #f7fbfc 0%, #f2f6f7 100%);
       color: var(--text);
+      background:
+        radial-gradient(circle at top right, rgba(11, 143, 154, 0.08), transparent 24%),
+        radial-gradient(circle at left top, rgba(11, 88, 96, 0.06), transparent 22%),
+        linear-gradient(180deg, #f7fbfc 0%, #f2f6f7 100%);
     }
 
     body {
       min-height: 100vh;
-    }
-
-    .page {
-      max-width: 1180px;
-      margin: 0 auto;
-      padding: 28px 18px 40px;
-    }
-
-    .topbar {
       display: flex;
       align-items: center;
-      justify-content: space-between;
-      gap: 20px;
-      margin-bottom: 28px;
+      justify-content: center;
+      padding: 28px 16px;
     }
 
-    .brand {
+    .shell {
+      width: 100%;
+      max-width: 880px;
+    }
+
+    .logo-wrap {
       display: flex;
-      align-items: center;
-      gap: 14px;
+      justify-content: center;
+      margin-bottom: 18px;
     }
 
-    .brand-logo {
-      width: 116px;
+    .logo {
+      width: 132px;
       height: auto;
       display: block;
       object-fit: contain;
-    }
-
-    .brand-text {
-      display: flex;
-      flex-direction: column;
-      gap: 3px;
-    }
-
-    .brand-kicker {
-      font-size: 12px;
-      font-weight: 700;
-      letter-spacing: .16em;
-      text-transform: uppercase;
-      color: var(--brand);
-    }
-
-    .brand-sub {
-      font-size: 13px;
-      color: var(--muted);
-    }
-
-    .top-pill {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      padding: 12px 16px;
-      border-radius: 999px;
-      background: rgba(255,255,255,0.8);
-      border: 1px solid var(--line);
-      color: var(--muted);
-      box-shadow: 0 8px 24px rgba(0,0,0,.04);
-      font-size: 14px;
-      white-space: nowrap;
-    }
-
-    .hero {
-      position: relative;
-      overflow: hidden;
-      border-radius: 34px;
-      background:
-        linear-gradient(135deg, rgba(10, 125, 136, 0.94), rgba(10, 91, 99, 0.96)),
-        linear-gradient(180deg, #0b8f9a 0%, #0b5860 100%);
-      color: #fff;
-      padding: 36px 34px;
-      box-shadow: 0 20px 44px rgba(10, 80, 88, 0.22);
-      margin-bottom: 24px;
-    }
-
-    .hero::before,
-    .hero::after {
-      content: "";
-      position: absolute;
-      border-radius: 50%;
-      background: rgba(255,255,255,0.08);
-      filter: blur(2px);
-    }
-
-    .hero::before {
-      width: 260px;
-      height: 260px;
-      right: -60px;
-      top: -90px;
-    }
-
-    .hero::after {
-      width: 180px;
-      height: 180px;
-      right: 120px;
-      bottom: -70px;
-    }
-
-    .hero-grid {
-      position: relative;
-      z-index: 1;
-      display: grid;
-      grid-template-columns: 1.35fr .95fr;
-      gap: 26px;
-      align-items: stretch;
-    }
-
-    .hero-copy h1 {
-      margin: 0 0 14px;
-      font-size: clamp(34px, 5vw, 54px);
-      line-height: .96;
-      letter-spacing: -0.03em;
-      font-weight: 800;
-    }
-
-    .hero-copy p {
-      margin: 0 0 18px;
-      max-width: 650px;
-      font-size: 17px;
-      line-height: 1.5;
-      color: rgba(255,255,255,0.88);
-    }
-
-    .hero-badges {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      margin-top: 18px;
-    }
-
-    .hero-badge {
-      display: inline-flex;
-      align-items: center;
-      padding: 10px 14px;
-      border-radius: 999px;
-      background: rgba(255,255,255,0.12);
-      border: 1px solid rgba(255,255,255,0.14);
-      font-size: 14px;
-      color: rgba(255,255,255,0.94);
-      backdrop-filter: blur(10px);
-    }
-
-    .hero-panel {
-      align-self: stretch;
-      border-radius: 26px;
-      padding: 22px 22px 20px;
-      background: rgba(255,255,255,0.12);
-      border: 1px solid rgba(255,255,255,0.14);
-      backdrop-filter: blur(14px);
-      box-shadow: inset 0 1px 0 rgba(255,255,255,0.06);
-    }
-
-    .hero-panel-title {
-      margin: 0 0 12px;
-      font-size: 14px;
-      font-weight: 700;
-      letter-spacing: .08em;
-      text-transform: uppercase;
-      color: rgba(255,255,255,0.82);
-    }
-
-    .hero-panel-list {
-      display: grid;
-      gap: 12px;
-    }
-
-    .hero-panel-item {
-      padding: 14px 16px;
-      border-radius: 18px;
-      background: rgba(255,255,255,0.10);
-      border: 1px solid rgba(255,255,255,0.10);
-    }
-
-    .hero-panel-item strong {
-      display: block;
-      font-size: 15px;
-      margin-bottom: 4px;
-    }
-
-    .hero-panel-item span {
-      font-size: 13px;
-      color: rgba(255,255,255,0.78);
-      line-height: 1.45;
-    }
-
-    .dashboard {
-      display: grid;
-      grid-template-columns: minmax(0, 1.25fr) minmax(320px, .75fr);
-      gap: 22px;
-      align-items: start;
     }
 
     .card {
@@ -239,72 +70,62 @@
       border: 1px solid var(--line);
       border-radius: var(--radius-xl);
       box-shadow: var(--shadow);
-      backdrop-filter: blur(16px);
+      backdrop-filter: blur(12px);
+      padding: 34px 32px 28px;
     }
 
-    .main-card {
-      padding: 28px;
+    .hero {
+      text-align: center;
+      margin-bottom: 26px;
     }
 
-    .side-card {
-      padding: 24px;
-    }
-
-    .card-head {
-      display: flex;
-      justify-content: space-between;
-      gap: 16px;
-      align-items: flex-start;
-      margin-bottom: 22px;
-    }
-
-    .card-title {
+    .title {
       margin: 0;
-      font-size: 28px;
-      line-height: 1.05;
-      letter-spacing: -0.02em;
+      font-size: clamp(34px, 5vw, 52px);
+      line-height: 0.98;
+      letter-spacing: -0.035em;
+      font-weight: 800;
+      color: var(--text);
     }
 
-    .card-subtitle {
-      margin: 8px 0 0;
-      color: var(--muted);
+    .subtitle {
+      margin: 12px auto 0;
+      max-width: 540px;
+      font-size: 16px;
       line-height: 1.5;
-      font-size: 15px;
-      max-width: 640px;
+      color: var(--muted);
     }
 
-    .head-tag {
-      flex: 0 0 auto;
-      padding: 10px 14px;
-      border-radius: 999px;
-      background: var(--brand-soft);
-      border: 1px solid rgba(11, 143, 154, 0.14);
-      color: var(--brand-dark);
-      font-size: 13px;
-      font-weight: 700;
-      white-space: nowrap;
-    }
-
-    .upload-box {
-      border: 1px dashed rgba(11, 88, 96, 0.18);
+    .panel {
+      border: 1px solid rgba(15, 94, 102, 0.10);
       border-radius: 24px;
+      background: linear-gradient(180deg, rgba(255,255,255,.96), rgba(245,249,250,.92));
       padding: 20px;
-      background: linear-gradient(180deg, rgba(255,255,255,0.9), rgba(244,249,250,0.92));
-      margin-bottom: 18px;
     }
 
-    .upload-label {
-      display: block;
+    .panel-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      margin-bottom: 14px;
+    }
+
+    .panel-title {
       font-size: 16px;
       font-weight: 700;
-      margin-bottom: 8px;
+      color: var(--text);
     }
 
-    .upload-note {
-      color: var(--muted);
-      font-size: 14px;
-      line-height: 1.45;
-      margin-bottom: 14px;
+    .panel-badge {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--brand-dark);
+      background: var(--brand-soft);
+      border: 1px solid rgba(11, 143, 154, 0.14);
+      border-radius: 999px;
+      padding: 9px 12px;
+      white-space: nowrap;
     }
 
     .file-input {
@@ -315,24 +136,27 @@
       padding: 14px;
       background: #fff;
       color: var(--text);
+      margin-bottom: 14px;
     }
 
     .actions {
       display: flex;
-      flex-wrap: wrap;
-      gap: 12px;
-      margin-top: 18px;
+      justify-content: center;
     }
 
     .btn {
       appearance: none;
       border: 0;
       border-radius: 16px;
-      padding: 16px 22px;
+      padding: 15px 24px;
       font-size: 15px;
       font-weight: 800;
       cursor: pointer;
-      transition: transform .15s ease, box-shadow .15s ease, opacity .15s ease;
+      transition: transform .15s ease, opacity .15s ease, box-shadow .15s ease;
+      min-width: 240px;
+      color: #fff;
+      background: linear-gradient(135deg, #0b7d88, #0b5760);
+      box-shadow: 0 14px 28px rgba(11, 88, 96, 0.18);
     }
 
     .btn:hover {
@@ -345,23 +169,17 @@
       transform: none;
     }
 
-    .btn-primary {
-      min-width: 240px;
-      color: #fff;
-      background: linear-gradient(135deg, #0b7d88, #0b5760);
-      box-shadow: 0 14px 28px rgba(11, 88, 96, 0.20);
-    }
-
     .status {
-      margin-top: 18px;
-      padding: 15px 16px;
-      border-radius: 18px;
+      margin-top: 16px;
+      padding: 14px 16px;
+      border-radius: 16px;
       background: #f7fbfc;
       border: 1px solid var(--line);
       color: var(--text);
       white-space: pre-wrap;
       line-height: 1.45;
       font-size: 14px;
+      text-align: center;
     }
 
     .status.success {
@@ -376,265 +194,67 @@
       border-color: var(--error-line);
     }
 
-    .mini-grid {
-      display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 12px;
-      margin-top: 18px;
-    }
-
-    .mini-card {
-      border-radius: 18px;
-      padding: 16px;
-      background: #f8fbfb;
-      border: 1px solid rgba(15, 94, 102, 0.10);
-    }
-
-    .mini-card strong {
-      display: block;
-      font-size: 14px;
-      margin-bottom: 6px;
-    }
-
-    .mini-card span {
-      display: block;
-      color: var(--muted);
-      font-size: 13px;
-      line-height: 1.4;
-    }
-
-    .side-title {
-      margin: 0 0 16px;
-      font-size: 18px;
-      letter-spacing: -0.02em;
-    }
-
-    .info-list {
-      display: grid;
-      gap: 12px;
-    }
-
-    .info-item {
-      padding: 16px 16px;
-      border-radius: 18px;
-      background: #f7fbfc;
-      border: 1px solid rgba(15, 94, 102, 0.10);
-    }
-
-    .info-item strong {
-      display: block;
-      margin-bottom: 5px;
-      font-size: 14px;
-    }
-
-    .info-item span {
-      color: var(--muted);
-      font-size: 13px;
-      line-height: 1.45;
-    }
-
-    .footer-note {
-      margin-top: 18px;
-      padding-top: 16px;
-      border-top: 1px solid rgba(15, 94, 102, 0.10);
-      font-size: 13px;
-      line-height: 1.5;
-      color: var(--muted);
-    }
-
-    code {
-      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-      font-size: .95em;
-    }
-
-    @media (max-width: 980px) {
-      .hero-grid,
-      .dashboard {
-        grid-template-columns: 1fr;
+    @media (max-width: 640px) {
+      body {
+        padding: 18px 12px;
       }
 
-      .topbar {
+      .card {
+        padding: 24px 18px 20px;
+        border-radius: 22px;
+      }
+
+      .panel {
+        padding: 16px;
+        border-radius: 18px;
+      }
+
+      .panel-top {
         flex-direction: column;
         align-items: flex-start;
       }
 
-      .mini-grid {
-        grid-template-columns: 1fr;
-      }
-
-      .card-head {
-        flex-direction: column;
-      }
-
-      .head-tag {
-        align-self: flex-start;
-      }
-    }
-
-    @media (max-width: 640px) {
-      .page {
-        padding: 18px 14px 30px;
-      }
-
-      .hero {
-        padding: 24px 20px;
-        border-radius: 26px;
-      }
-
-      .main-card,
-      .side-card {
-        padding: 20px;
-      }
-
-      .hero-copy h1 {
-        font-size: 34px;
-      }
-
-      .card-title {
-        font-size: 24px;
-      }
-
-      .btn-primary {
+      .btn {
         width: 100%;
       }
 
-      .brand-logo {
-        width: 98px;
+      .logo {
+        width: 116px;
       }
     }
   </style>
 </head>
 <body>
-  <div class="page">
-    <div class="topbar">
-      <div class="brand">
-        <img
-          class="brand-logo"
-          src="https://raw.githubusercontent.com/zivakipom56-alt/schedule_week/main/sibur-logo.png"
-          alt="СИБУР"
-        />
-        <div class="brand-text">
-          <div class="brand-kicker">СИБУР</div>
-          <div class="brand-sub">Конвертер недельного графика в презентацию PowerPoint</div>
-        </div>
-      </div>
-
-      <div class="top-pill">Excel → PPTX • Нижнекамск • Пн–Пт</div>
+  <div class="shell">
+    <div class="logo-wrap">
+      <img
+        class="logo"
+        src="https://raw.githubusercontent.com/zivakipom56-alt/schedule_week/main/sibur-logo.png"
+        alt="Логотип"
+      />
     </div>
 
-    <section class="hero">
-      <div class="hero-grid">
-        <div class="hero-copy">
-          <h1>Расписание<br>обучений</h1>
-          <p>
-            Загрузите недельный Excel-файл, и сервис автоматически соберёт готовую
-            презентацию PowerPoint по Нижнекамску с распределением курсов по дням недели.
-          </p>
-
-          <div class="hero-badges">
-            <div class="hero-badge">5 слайдов по рабочим дням</div>
-            <div class="hero-badge">Автосортировка по аудиториям</div>
-            <div class="hero-badge">Готовый PPTX для скачивания</div>
-          </div>
-        </div>
-
-        <div class="hero-panel">
-          <div class="hero-panel-title">Как это работает</div>
-          <div class="hero-panel-list">
-            <div class="hero-panel-item">
-              <strong>1. Загрузка Excel</strong>
-              <span>Используется лист «Источник» с недельным расписанием обучения.</span>
-            </div>
-            <div class="hero-panel-item">
-              <strong>2. Обработка данных</strong>
-              <span>Берутся только курсы Нижнекамска, аудитории и преподаватели.</span>
-            </div>
-            <div class="hero-panel-item">
-              <strong>3. Генерация презентации</strong>
-              <span>На выходе формируется готовый файл .pptx для скачивания.</span>
-            </div>
-          </div>
-        </div>
+    <div class="card">
+      <div class="hero">
+        <h1 class="title">Excel → PPTX</h1>
+        <div class="subtitle">Загрузка графика и генерация презентации</div>
       </div>
-    </section>
 
-    <section class="dashboard">
-      <div class="card main-card">
-        <div class="card-head">
-          <div>
-            <h2 class="card-title">Сформировать презентацию</h2>
-            <p class="card-subtitle">
-              Загрузите Excel-график. Приложение автоматически сформирует презентацию
-              с шаблонным оформлением, датами, аудиториями и курсами на каждый день.
-            </p>
-          </div>
-          <div class="head-tag">Внутренний инструмент</div>
+      <div class="panel">
+        <div class="panel-top">
+          <div class="panel-title">Выберите файл</div>
+          <div class="panel-badge">Нижнекамск • Пн–Пт</div>
         </div>
 
-        <div class="upload-box">
-          <label class="upload-label" for="excelFile">Excel-файл графика</label>
-          <div class="upload-note">
-            Поддерживаются файлы <code>.xlsx</code>, <code>.xls</code>, <code>.xlsm</code>.
-            Используется недельный график обучения с листа <code>Источник</code>.
-          </div>
-          <input class="file-input" id="excelFile" type="file" accept=".xlsx,.xls,.xlsm" />
-        </div>
+        <input class="file-input" id="excelFile" type="file" accept=".xlsx,.xls,.xlsm" />
 
         <div class="actions">
-          <button class="btn btn-primary" id="generateBtn">Сгенерировать PPTX</button>
+          <button class="btn" id="generateBtn">Сгенерировать PPTX</button>
         </div>
 
         <div id="status" class="status">Ожидаю Excel-файл.</div>
-
-        <div class="mini-grid">
-          <div class="mini-card">
-            <strong>Фильтрация</strong>
-            <span>В презентацию попадают только курсы Нижнекамска.</span>
-          </div>
-          <div class="mini-card">
-            <strong>Сортировка</strong>
-            <span>Порядок на слайде — по аудиториям, полигоны и пустые в конце.</span>
-          </div>
-          <div class="mini-card">
-            <strong>Результат</strong>
-            <span>Готовая PowerPoint-презентация для скачивания одним файлом.</span>
-          </div>
-        </div>
       </div>
-
-      <aside class="card side-card">
-        <h3 class="side-title">Что учитывается</h3>
-
-        <div class="info-list">
-          <div class="info-item">
-            <strong>Период курса</strong>
-            <span>Курс попадает на каждый день недели, если он реально идёт в этот день.</span>
-          </div>
-
-          <div class="info-item">
-            <strong>Преподаватели</strong>
-            <span>Используется первый преподаватель из ячейки, в формате «Имя Фамилия».</span>
-          </div>
-
-          <div class="info-item">
-            <strong>Локации</strong>
-            <span>Аудитории и этажи берутся из места проведения. «Полигоны» выводятся отдельно.</span>
-          </div>
-
-          <div class="info-item">
-            <strong>Формат выгрузки</strong>
-            <span>Слайды создаются в PowerPoint с оформлением, близким к корпоративному шаблону.</span>
-          </div>
-        </div>
-
-        <div class="footer-note">
-          Перед генерацией убедитесь, что в файле корректно заполнены поля:
-          <code>Место проведения</code>, <code>Название мероприятия</code>,
-          <code>Дата начала</code>, <code>Дата завершения</code>,
-          <code>КТ/сопровождающий</code>.
-        </div>
-      </aside>
-    </section>
+    </div>
   </div>
 
   <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
