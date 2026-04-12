@@ -1,927 +1,928 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Excel → PPTX</title>
-  <style>
-    :root {
-      --bg: #f4f7f8;
-      --card: rgba(255, 255, 255, 0.9);
-      --text: #19353c;
-      --muted: #61767b;
-      --line: rgba(15, 94, 102, 0.12);
-      --brand: #0b8f9a;
-      --brand-dark: #0b5860;
-      --brand-soft: rgba(11, 143, 154, 0.08);
-      --success: #146c43;
-      --success-bg: #f1fbf5;
-      --success-line: #cbe8d7;
-      --error: #b34747;
-      --error-bg: #fff6f6;
-      --error-line: #f0cccc;
-      --shadow: 0 18px 40px rgba(18, 55, 62, 0.08);
-      --radius-xl: 28px;
-      --radius-lg: 20px;
-      --radius-md: 16px;
-    }
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Excel → PPTX</title>
+    <style>
+        :root {
+            --bg: #f4f7f8;
+            --card: rgba(255, 255, 255, 0.9);
+            --text: #19353c;
+            --muted: #61767b;
+            --line: rgba(15, 94, 102, 0.12);
+            --brand: #0b8f9a;
+            --brand-dark: #0b5860;
+            --brand-soft: rgba(11, 143, 154, 0.08);
+            --success: #146c43;
+            --success-bg: #f1fbf5;
+            --success-line: #cbe8d7;
+            --error: #b34747;
+            --error-bg: #fff6f6;
+            --error-line: #f0cccc;
+            --shadow: 0 18px 40px rgba(18, 55, 62, 0.08);
+            --radius-xl: 28px;
+            --radius-lg: 20px;
+            --radius-md: 16px;
+        }
 
-    * { box-sizing: border-box; }
+        * {
+            box-sizing: border-box;
+        }
 
-    html, body {
-      margin: 0;
-      padding: 0;
-      font-family: Inter, Arial, Helvetica, sans-serif;
-      color: var(--text);
-      background:
-        radial-gradient(circle at top right, rgba(11, 143, 154, 0.08), transparent 24%),
-        radial-gradient(circle at left top, rgba(11, 88, 96, 0.06), transparent 22%),
-        linear-gradient(180deg, #f7fbfc 0%, #f2f6f7 100%);
-    }
+        html, body {
+            margin: 0;
+            padding: 0;
+            font-family: Inter, Arial, Helvetica, sans-serif;
+            color: var(--text);
+            background: radial-gradient(circle at top right, rgba(11, 143, 154, 0.08), transparent 24%),
+            radial-gradient(circle at left top, rgba(11, 88, 96, 0.06), transparent 22%),
+            linear-gradient(180deg, #f7fbfc 0%, #f2f6f7 100%);
+        }
 
-    body {
-      min-height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 28px 16px;
-    }
+        body {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 28px 16px;
+        }
 
-    .shell {
-      width: 100%;
-      max-width: 880px;
-    }
+        .shell {
+            width: 100%;
+            max-width: 880px;
+        }
 
-    .logo-wrap {
-      display: flex;
-      justify-content: center;
-      margin-bottom: 18px;
-    }
+        .logo-wrap {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 18px;
+        }
 
-    .logo {
-      width: 132px;
-      height: auto;
-      display: block;
-      object-fit: contain;
-    }
+        .logo {
+            width: 132px;
+            height: auto;
+            display: block;
+            object-fit: contain;
+        }
 
-    .card {
-      background: var(--card);
-      border: 1px solid var(--line);
-      border-radius: var(--radius-xl);
-      box-shadow: var(--shadow);
-      backdrop-filter: blur(12px);
-      padding: 34px 32px 28px;
-    }
+        .card {
+            background: var(--card);
+            border: 1px solid var(--line);
+            border-radius: var(--radius-xl);
+            box-shadow: var(--shadow);
+            backdrop-filter: blur(12px);
+            padding: 34px 32px 28px;
+        }
 
-    .hero {
-      text-align: center;
-      margin-bottom: 26px;
-    }
+        .hero {
+            text-align: center;
+            margin-bottom: 26px;
+        }
 
-    .title {
-      margin: 0;
-      font-size: clamp(34px, 5vw, 52px);
-      line-height: 0.98;
-      letter-spacing: -0.035em;
-      font-weight: 800;
-      color: var(--text);
-    }
+        .title {
+            margin: 0;
+            font-size: clamp(34px, 5vw, 52px);
+            line-height: 0.98;
+            letter-spacing: -0.035em;
+            font-weight: 800;
+            color: var(--text);
+        }
 
-    .subtitle {
-      margin: 12px auto 0;
-      max-width: 540px;
-      font-size: 16px;
-      line-height: 1.5;
-      color: var(--muted);
-    }
+        .subtitle {
+            margin: 12px auto 0;
+            max-width: 540px;
+            font-size: 16px;
+            line-height: 1.5;
+            color: var(--muted);
+        }
 
-    .panel {
-      border: 1px solid rgba(15, 94, 102, 0.10);
-      border-radius: 24px;
-      background: linear-gradient(180deg, rgba(255,255,255,.96), rgba(245,249,250,.92));
-      padding: 20px;
-    }
+        .panel {
+            border: 1px solid rgba(15, 94, 102, 0.10);
+            border-radius: 24px;
+            background: linear-gradient(180deg, rgba(255, 255, 255, .96), rgba(245, 249, 250, .92));
+            padding: 20px;
+        }
 
-    .panel-top {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 14px;
-      margin-bottom: 14px;
-    }
+        .panel-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 14px;
+            margin-bottom: 14px;
+        }
 
-    .panel-title {
-      font-size: 16px;
-      font-weight: 700;
-      color: var(--text);
-    }
+        .panel-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--text);
+        }
 
-    .panel-badge {
-      font-size: 13px;
-      font-weight: 700;
-      color: var(--brand-dark);
-      background: var(--brand-soft);
-      border: 1px solid rgba(11, 143, 154, 0.14);
-      border-radius: 999px;
-      padding: 9px 12px;
-      white-space: nowrap;
-    }
+        .panel-badge {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--brand-dark);
+            background: var(--brand-soft);
+            border: 1px solid rgba(11, 143, 154, 0.14);
+            border-radius: 999px;
+            padding: 9px 12px;
+            white-space: nowrap;
+        }
 
-    .file-input {
-      width: 100%;
-      display: block;
-      border: 1px solid rgba(15, 94, 102, 0.14);
-      border-radius: 16px;
-      padding: 14px;
-      background: #fff;
-      color: var(--text);
-      margin-bottom: 14px;
-    }
+        .file-input {
+            width: 100%;
+            display: block;
+            border: 1px solid rgba(15, 94, 102, 0.14);
+            border-radius: 16px;
+            padding: 14px;
+            background: #fff;
+            color: var(--text);
+            margin-bottom: 14px;
+        }
 
-    .actions {
-      display: flex;
-      justify-content: center;
-    }
+        .actions {
+            display: flex;
+            justify-content: center;
+        }
 
-    .btn {
-      appearance: none;
-      border: 0;
-      border-radius: 16px;
-      padding: 15px 24px;
-      font-size: 15px;
-      font-weight: 800;
-      cursor: pointer;
-      transition: transform .15s ease, opacity .15s ease, box-shadow .15s ease;
-      min-width: 240px;
-      color: #fff;
-      background: linear-gradient(135deg, #0b7d88, #0b5760);
-      box-shadow: 0 14px 28px rgba(11, 88, 96, 0.18);
-    }
+        .btn {
+            appearance: none;
+            border: 0;
+            border-radius: 16px;
+            padding: 15px 24px;
+            font-size: 15px;
+            font-weight: 800;
+            cursor: pointer;
+            transition: transform .15s ease, opacity .15s ease, box-shadow .15s ease;
+            min-width: 240px;
+            color: #fff;
+            background: linear-gradient(135deg, #0b7d88, #0b5760);
+            box-shadow: 0 14px 28px rgba(11, 88, 96, 0.18);
+        }
 
-    .btn:hover {
-      transform: translateY(-1px);
-    }
+        .btn:hover {
+            transform: translateY(-1px);
+        }
 
-    .btn:disabled {
-      opacity: .6;
-      cursor: not-allowed;
-      transform: none;
-    }
+        .btn:disabled {
+            opacity: .6;
+            cursor: not-allowed;
+            transform: none;
+        }
 
-    .status {
-      margin-top: 16px;
-      padding: 14px 16px;
-      border-radius: 16px;
-      background: #f7fbfc;
-      border: 1px solid var(--line);
-      color: var(--text);
-      white-space: pre-wrap;
-      line-height: 1.45;
-      font-size: 14px;
-      text-align: center;
-    }
+        .status {
+            margin-top: 16px;
+            padding: 14px 16px;
+            border-radius: 16px;
+            background: #f7fbfc;
+            border: 1px solid var(--line);
+            color: var(--text);
+            white-space: pre-wrap;
+            line-height: 1.45;
+            font-size: 14px;
+            text-align: center;
+        }
 
-    .status.success {
-      color: var(--success);
-      background: var(--success-bg);
-      border-color: var(--success-line);
-    }
+        .status.success {
+            color: var(--success);
+            background: var(--success-bg);
+            border-color: var(--success-line);
+        }
 
-    .status.error {
-      color: var(--error);
-      background: var(--error-bg);
-      border-color: var(--error-line);
-    }
+        .status.error {
+            color: var(--error);
+            background: var(--error-bg);
+            border-color: var(--error-line);
+        }
 
-    @media (max-width: 640px) {
-      body {
-        padding: 18px 12px;
-      }
+        @media (max-width: 640px) {
+            body {
+                padding: 18px 12px;
+            }
 
-      .card {
-        padding: 24px 18px 20px;
-        border-radius: 22px;
-      }
+            .card {
+                padding: 24px 18px 20px;
+                border-radius: 22px;
+            }
 
-      .panel {
-        padding: 16px;
-        border-radius: 18px;
-      }
+            .panel {
+                padding: 16px;
+                border-radius: 18px;
+            }
 
-      .panel-top {
-        flex-direction: column;
-        align-items: flex-start;
-      }
+            .panel-top {
+                flex-direction: column;
+                align-items: flex-start;
+            }
 
-      .btn {
-        width: 100%;
-      }
+            .btn {
+                width: 100%;
+            }
 
-      .logo {
-        width: 116px;
-      }
-    }
-  </style>
+            .logo {
+                width: 116px;
+            }
+        }
+    </style>
 </head>
 <body>
-  <div class="shell">
+<div class="shell">
     <div class="logo-wrap">
-      <img
-        class="logo"
-        src="https://raw.githubusercontent.com/zivakipom56-alt/schedule_week/main/sibur-logo.png"
-        alt="Логотип"
-      />
+        <img
+                class="logo"
+                src="./sibur-logo.png"
+                alt="Логотип"
+        />
     </div>
 
     <div class="card">
-      <div class="hero">
-        <h1 class="title">Excel → PPTX</h1>
-        <div class="subtitle">Загрузка графика и генерация презентации</div>
-      </div>
-
-      <div class="panel">
-        <div class="panel-top">
-          <div class="panel-title">Выберите файл</div>
-          <div class="panel-badge">Нижнекамск • Пн–Пт</div>
+        <div class="hero">
+            <h1 class="title">Excel → PPTX</h1>
+            <div class="subtitle">Загрузка графика и генерация презентации</div>
         </div>
 
-        <input class="file-input" id="excelFile" type="file" accept=".xlsx,.xls,.xlsm" />
+        <div class="panel">
+            <div class="panel-top">
+                <div class="panel-title">Выберите файл</div>
+                <div class="panel-badge">Нижнекамск • Пн–Пт</div>
+            </div>
 
-        <div class="actions">
-          <button class="btn" id="generateBtn">Сгенерировать PPTX</button>
+            <input class="file-input" id="excelFile" type="file" accept=".xlsx,.xls,.xlsm"/>
+
+            <div class="actions">
+                <button class="btn" id="generateBtn">Сгенерировать PPTX</button>
+            </div>
+
+            <div id="status" class="status">Ожидаю Excel-файл.</div>
         </div>
-
-        <div id="status" class="status">Ожидаю Excel-файл.</div>
-      </div>
     </div>
-  </div>
+</div>
 
-  <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/gh/gitbrent/pptxgenjs/dist/pptxgen.bundle.js"></script>
+<script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/gitbrent/pptxgenjs/dist/pptxgen.bundle.js"></script>
 
-  <script>
+<script>
     const statusEl = document.getElementById('status');
     const fileInput = document.getElementById('excelFile');
     const generateBtn = document.getElementById('generateBtn');
 
-    const LOGO_URL = 'https://raw.githubusercontent.com/zivakipom56-alt/schedule_week/main/logo%20sith.jpg';
-    const BG_TOP_RIGHT_URL = 'https://raw.githubusercontent.com/zivakipom56-alt/schedule_week/main/fon.jpg';
+    const LOGO_URL = 'logo sith.jpg';
+    const BG_TOP_RIGHT_URL = 'fon.jpg';
 
     const RU_MONTHS = [
-      'января', 'февраля', 'марта', 'апреля', 'мая', 'июня',
-      'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'
+        'января', 'февраля', 'марта', 'апреля', 'мая', 'июня',
+        'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'
     ];
 
     function setStatus(message, type = '') {
-      statusEl.textContent = message;
-      statusEl.className = 'status' + (type ? ' ' + type : '');
+        statusEl.textContent = message;
+        statusEl.className = 'status' + (type ? ' ' + type : '');
     }
 
     function normalizeText(value) {
-      return String(value ?? '')
-        .replace(/\u00A0/g, ' ')
-        .replace(/\s+/g, ' ')
-        .trim()
-        .toLowerCase();
+        return String(value ?? '')
+            .replace(/\u00A0/g, ' ')
+            .replace(/\s+/g, ' ')
+            .trim()
+            .toLowerCase();
     }
 
     function cleanText(value) {
-      return String(value ?? '')
-        .replace(/\u00A0/g, ' ')
-        .replace(/\s+/g, ' ')
-        .trim();
+        return String(value ?? '')
+            .replace(/\u00A0/g, ' ')
+            .replace(/\s+/g, ' ')
+            .trim();
     }
 
     function excelDateToJS(value) {
-      if (value instanceof Date && !Number.isNaN(value)) {
-        return new Date(value.getFullYear(), value.getMonth(), value.getDate());
-      }
-
-      if (typeof value === 'number') {
-        const parsed = XLSX.SSF.parse_date_code(value);
-        if (!parsed) return null;
-        return new Date(parsed.y, parsed.m - 1, parsed.d);
-      }
-
-      if (typeof value === 'string' && value.trim()) {
-        const str = value.trim();
-        const m = str.match(/^(\d{1,2})[.\-\/](\d{1,2})[.\-\/](\d{2,4})$/);
-        if (m) {
-          let year = Number(m[3]);
-          if (year < 100) year += 2000;
-          return new Date(year, Number(m[2]) - 1, Number(m[1]));
+        if (value instanceof Date && !Number.isNaN(value)) {
+            return new Date(value.getFullYear(), value.getMonth(), value.getDate());
         }
 
-        const d = new Date(str);
-        if (!Number.isNaN(d)) {
-          return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+        if (typeof value === 'number') {
+            const parsed = XLSX.SSF.parse_date_code(value);
+            if (!parsed) return null;
+            return new Date(parsed.y, parsed.m - 1, parsed.d);
         }
-      }
 
-      return null;
+        if (typeof value === 'string' && value.trim()) {
+            const str = value.trim();
+            const m = str.match(/^(\d{1,2})[.\-\/](\d{1,2})[.\-\/](\d{2,4})$/);
+            if (m) {
+                let year = Number(m[3]);
+                if (year < 100) year += 2000;
+                return new Date(year, Number(m[2]) - 1, Number(m[1]));
+            }
+
+            const d = new Date(str);
+            if (!Number.isNaN(d)) {
+                return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+            }
+        }
+
+        return null;
     }
 
     function cloneDate(d) {
-      return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+        return new Date(d.getFullYear(), d.getMonth(), d.getDate());
     }
 
     function addDays(date, days) {
-      const d = cloneDate(date);
-      d.setDate(d.getDate() + days);
-      return d;
+        const d = cloneDate(date);
+        d.setDate(d.getDate() + days);
+        return d;
     }
 
     function startOfWeekMonday(date) {
-      const d = cloneDate(date);
-      const day = d.getDay();
-      const diff = day === 0 ? -6 : 1 - day;
-      return addDays(d, diff);
+        const d = cloneDate(date);
+        const day = d.getDay();
+        const diff = day === 0 ? -6 : 1 - day;
+        return addDays(d, diff);
     }
 
     function formatDateShort(date) {
-      return `${String(date.getDate()).padStart(2, '0')}.${String(date.getMonth() + 1).padStart(2, '0')}`;
+        return `${String(date.getDate()).padStart(2, '0')}.${String(date.getMonth() + 1).padStart(2, '0')}`;
     }
 
     function formatSlideDate(date) {
-      return `${date.getDate()} ${RU_MONTHS[date.getMonth()]} ${date.getFullYear()} года`;
+        return `${date.getDate()} ${RU_MONTHS[date.getMonth()]} ${date.getFullYear()} года`;
     }
 
     function parseWeekFromFilename(filename, availableYears = []) {
-      const normalized = filename.replace(/_/g, '.');
-      const match = normalized.match(/(\d{2})\.(\d{2}).*?(\d{2})\.(\d{2})/);
+        const normalized = filename.replace(/_/g, '.');
+        const match = normalized.match(/(\d{2})\.(\d{2}).*?(\d{2})\.(\d{2})/);
 
-      if (!match) return null;
+        if (!match) return null;
 
-      const d1 = Number(match[1]);
-      const m1 = Number(match[2]);
-      const d2 = Number(match[3]);
-      const m2 = Number(match[4]);
-      const year = availableYears.length ? Math.max(...availableYears) : new Date().getFullYear();
+        const d1 = Number(match[1]);
+        const m1 = Number(match[2]);
+        const d2 = Number(match[3]);
+        const m2 = Number(match[4]);
+        const year = availableYears.length ? Math.max(...availableYears) : new Date().getFullYear();
 
-      const start = new Date(year, m1 - 1, d1);
-      const endYear = m2 < m1 ? year + 1 : year;
-      const end = new Date(endYear, m2 - 1, d2);
+        const start = new Date(year, m1 - 1, d1);
+        const endYear = m2 < m1 ? year + 1 : year;
+        const end = new Date(endYear, m2 - 1, d2);
 
-      if (Number.isNaN(start) || Number.isNaN(end)) return null;
-      return { start, end };
+        if (Number.isNaN(start) || Number.isNaN(end)) return null;
+        return {start, end};
     }
 
     function detectHeaderRow(rows) {
-      return rows.findIndex(row => {
-        const normalized = row.map(normalizeText);
-        return normalized.includes('название мероприятия') &&
-               normalized.includes('дата начала') &&
-               normalized.includes('дата завершения');
-      });
+        return rows.findIndex(row => {
+            const normalized = row.map(normalizeText);
+            return normalized.includes('название мероприятия') &&
+                normalized.includes('дата начала') &&
+                normalized.includes('дата завершения');
+        });
     }
 
     function buildHeaderMap(headerRow) {
-      const findIndex = predicate => headerRow.findIndex((name, idx) => predicate(normalizeText(name), idx));
+        const findIndex = predicate => headerRow.findIndex((name, idx) => predicate(normalizeText(name), idx));
 
-      const placeIndexes = headerRow
-        .map((name, idx) => ({ idx, key: normalizeText(name) }))
-        .filter(item => item.key === 'место проведения')
-        .map(item => item.idx);
+        const placeIndexes = headerRow
+            .map((name, idx) => ({idx, key: normalizeText(name)}))
+            .filter(item => item.key === 'место проведения')
+            .map(item => item.idx);
 
-      return {
-        placeCandidates: placeIndexes,
-        course: findIndex(name => name === 'название мероприятия'),
-        start: findIndex(name => name === 'дата начала'),
-        end: findIndex(name => name === 'дата завершения'),
-        trainer: findIndex(name => name.includes('кт/сопровождающий'))
-      };
+        return {
+            placeCandidates: placeIndexes,
+            course: findIndex(name => name === 'название мероприятия'),
+            start: findIndex(name => name === 'дата начала'),
+            end: findIndex(name => name === 'дата завершения'),
+            trainer: findIndex(name => name.includes('кт/сопровождающий'))
+        };
     }
 
     function chooseBestPlaceColumn(rows, startRowIndex, candidateIndexes) {
-      if (!candidateIndexes || !candidateIndexes.length) return -1;
-      if (candidateIndexes.length === 1) return candidateIndexes[0];
+        if (!candidateIndexes || !candidateIndexes.length) return -1;
+        if (candidateIndexes.length === 1) return candidateIndexes[0];
 
-      const scoreColumn = (colIdx) => {
-        let score = 0;
+        const scoreColumn = (colIdx) => {
+            let score = 0;
 
-        for (let r = startRowIndex; r < Math.min(rows.length, startRowIndex + 500); r++) {
-          const value = cleanText(rows[r]?.[colIdx]);
-          if (!value) continue;
+            for (let r = startRowIndex; r < Math.min(rows.length, startRowIndex + 500); r++) {
+                const value = cleanText(rows[r]?.[colIdx]);
+                if (!value) continue;
 
-          const lowered = value.toLowerCase();
+                const lowered = value.toLowerCase();
 
-          if (lowered.includes('нижнекамск')) score += 1;
-          if (lowered.includes('сибуринтех')) score += 1;
-          if (lowered.includes('полигоны')) score += 6;
-          if (/\b\d\.\d{1,2}\b/.test(value)) score += 6;
+                if (lowered.includes('нижнекамск')) score += 1;
+                if (lowered.includes('сибуринтех')) score += 1;
+                if (lowered.includes('полигоны')) score += 6;
+                if (/\b\d\.\d{1,2}\b/.test(value)) score += 6;
+            }
+
+            return score;
+        };
+
+        let bestIdx = candidateIndexes[0];
+        let bestScore = -1;
+
+        for (const idx of candidateIndexes) {
+            const score = scoreColumn(idx);
+            if (score > bestScore) {
+                bestScore = score;
+                bestIdx = idx;
+            }
         }
 
-        return score;
-      };
-
-      let bestIdx = candidateIndexes[0];
-      let bestScore = -1;
-
-      for (const idx of candidateIndexes) {
-        const score = scoreColumn(idx);
-        if (score > bestScore) {
-          bestScore = score;
-          bestIdx = idx;
+        if (bestScore <= 0) {
+            return candidateIndexes.includes(6) ? 6 : candidateIndexes[0];
         }
-      }
 
-      if (bestScore <= 0) {
-        return candidateIndexes.includes(6) ? 6 : candidateIndexes[0];
-      }
-
-      return bestIdx;
+        return bestIdx;
     }
 
     function detectBestWeek(courses) {
-      const minDate = courses.reduce((min, c) => c.start < min ? c.start : min, courses[0].start);
-      const maxDate = courses.reduce((max, c) => c.end > max ? c.end : max, courses[0].end);
+        const minDate = courses.reduce((min, c) => c.start < min ? c.start : min, courses[0].start);
+        const maxDate = courses.reduce((max, c) => c.end > max ? c.end : max, courses[0].end);
 
-      let current = startOfWeekMonday(addDays(minDate, -7));
-      const finish = addDays(maxDate, 7);
+        let current = startOfWeekMonday(addDays(minDate, -7));
+        const finish = addDays(maxDate, 7);
 
-      let best = { score: -1, start: current, end: addDays(current, 4) };
+        let best = {score: -1, start: current, end: addDays(current, 4)};
 
-      while (current <= finish) {
-        let score = 0;
-        for (let i = 0; i < 5; i++) {
-          const day = addDays(current, i);
-          score += courses.filter(c => c.start <= day && c.end >= day).length;
+        while (current <= finish) {
+            let score = 0;
+            for (let i = 0; i < 5; i++) {
+                const day = addDays(current, i);
+                score += courses.filter(c => c.start <= day && c.end >= day).length;
+            }
+
+            if (score > best.score) {
+                best = {score, start: current, end: addDays(current, 4)};
+            }
+
+            current = addDays(current, 7);
         }
 
-        if (score > best.score) {
-          best = { score, start: current, end: addDays(current, 4) };
-        }
-
-        current = addDays(current, 7);
-      }
-
-      return best;
+        return best;
     }
 
     function extractFirstTrainerName(value) {
-      const raw = String(value ?? '')
-        .replace(/\u00A0/g, ' ')
-        .replace(/\r/g, '\n')
-        .trim();
+        const raw = String(value ?? '')
+            .replace(/\u00A0/g, ' ')
+            .replace(/\r/g, '\n')
+            .trim();
 
-      if (!raw) return '';
+        if (!raw) return '';
 
-      const firstChunk = raw
-        .split(/\n|,/)
-        .map(s => s.trim())
-        .filter(Boolean)[0] || '';
+        const firstChunk = raw
+            .split(/\n|,/)
+            .map(s => s.trim())
+            .filter(Boolean)[0] || '';
 
-      if (!firstChunk) return '';
+        if (!firstChunk) return '';
 
-      const parts = firstChunk.split(/\s+/).filter(Boolean);
+        const parts = firstChunk.split(/\s+/).filter(Boolean);
 
-      if (parts.length >= 2) {
-        const surname = parts[0];
-        const name = parts[1];
-        return `${name} ${surname}`;
-      }
+        if (parts.length >= 2) {
+            const surname = parts[0];
+            const name = parts[1];
+            return `${name} ${surname}`;
+        }
 
-      return firstChunk;
+        return firstChunk;
     }
 
     function extractRoomAndFloor(place) {
-      const text = cleanText(place);
-      if (!text) return { room: '', floor: '' };
+        const text = cleanText(place);
+        if (!text) return {room: '', floor: ''};
 
-      const lowered = text.toLowerCase();
+        const lowered = text.toLowerCase();
 
-      if (lowered.includes('полигоны')) {
-        return { room: 'Полигоны', floor: '' };
-      }
+        if (lowered.includes('полигоны')) {
+            return {room: 'Полигоны', floor: ''};
+        }
 
-      const roomMatch = text.match(/\b(\d\.\d{1,2})\b/);
-      if (roomMatch) {
-        const room = roomMatch[1];
-        return { room, floor: room.charAt(0) };
-      }
+        const roomMatch = text.match(/\b(\d\.\d{1,2})\b/);
+        if (roomMatch) {
+            const room = roomMatch[1];
+            return {room, floor: room.charAt(0)};
+        }
 
-      return { room: '', floor: '' };
+        return {room: '', floor: ''};
     }
 
     function compareRoomValues(a, b) {
-      const roomA = cleanText(a.room);
-      const roomB = cleanText(b.room);
+        const roomA = cleanText(a.room);
+        const roomB = cleanText(b.room);
 
-      const isEmptyA = !roomA;
-      const isEmptyB = !roomB;
-      const isPolyA = normalizeText(roomA) === 'полигоны';
-      const isPolyB = normalizeText(roomB) === 'полигоны';
+        const isEmptyA = !roomA;
+        const isEmptyB = !roomB;
+        const isPolyA = normalizeText(roomA) === 'полигоны';
+        const isPolyB = normalizeText(roomB) === 'полигоны';
 
-      if (isEmptyA && !isEmptyB) return 1;
-      if (!isEmptyA && isEmptyB) return -1;
+        if (isEmptyA && !isEmptyB) return 1;
+        if (!isEmptyA && isEmptyB) return -1;
 
-      if (isPolyA && !isPolyB) return 1;
-      if (!isPolyA && isPolyB) return -1;
+        if (isPolyA && !isPolyB) return 1;
+        if (!isPolyA && isPolyB) return -1;
 
-      if (isPolyA && isPolyB) {
-        return a.course.localeCompare(b.course, 'ru');
-      }
+        if (isPolyA && isPolyB) {
+            return a.course.localeCompare(b.course, 'ru');
+        }
 
-      if (isEmptyA && isEmptyB) {
-        return a.course.localeCompare(b.course, 'ru');
-      }
+        if (isEmptyA && isEmptyB) {
+            return a.course.localeCompare(b.course, 'ru');
+        }
 
-      const matchA = roomA.match(/^(\d)\.(\d{1,2})$/);
-      const matchB = roomB.match(/^(\d)\.(\d{1,2})$/);
+        const matchA = roomA.match(/^(\d)\.(\d{1,2})$/);
+        const matchB = roomB.match(/^(\d)\.(\d{1,2})$/);
 
-      if (matchA && matchB) {
-        const floorA = Number(matchA[1]);
-        const floorB = Number(matchB[1]);
-        if (floorA !== floorB) return floorA - floorB;
+        if (matchA && matchB) {
+            const floorA = Number(matchA[1]);
+            const floorB = Number(matchB[1]);
+            if (floorA !== floorB) return floorA - floorB;
 
-        const numA = Number(matchA[2]);
-        const numB = Number(matchB[2]);
-        if (numA !== numB) return numA - numB;
-      }
+            const numA = Number(matchA[2]);
+            const numB = Number(matchB[2]);
+            if (numA !== numB) return numA - numB;
+        }
 
-      return roomA.localeCompare(roomB, 'ru') || a.course.localeCompare(b.course, 'ru');
+        return roomA.localeCompare(roomB, 'ru') || a.course.localeCompare(b.course, 'ru');
     }
 
     function buildDayCourses(courses, day) {
-      return courses
-        .filter(c => c.start <= day && c.end >= day)
-        .sort(compareRoomValues);
+        return courses
+            .filter(c => c.start <= day && c.end >= day)
+            .sort(compareRoomValues);
     }
 
     function extractCourses(workbook, fileName) {
-      const sheetName = workbook.SheetNames.includes('Источник') ? 'Источник' : workbook.SheetNames[0];
-      const sheet = workbook.Sheets[sheetName];
-      const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, raw: true, defval: '' });
+        const sheetName = workbook.SheetNames.includes('Источник') ? 'Источник' : workbook.SheetNames[0];
+        const sheet = workbook.Sheets[sheetName];
+        const rows = XLSX.utils.sheet_to_json(sheet, {header: 1, raw: true, defval: ''});
 
-      const headerIndex = detectHeaderRow(rows);
-      if (headerIndex === -1) {
-        throw new Error('Не удалось найти строку заголовков на листе «Источник».');
-      }
+        const headerIndex = detectHeaderRow(rows);
+        if (headerIndex === -1) {
+            throw new Error('Не удалось найти строку заголовков на листе «Источник».');
+        }
 
-      const header = rows[headerIndex].map(cleanText);
-      const map = buildHeaderMap(header);
-      const placeColumnIndex = chooseBestPlaceColumn(rows, headerIndex + 1, map.placeCandidates);
+        const header = rows[headerIndex].map(cleanText);
+        const map = buildHeaderMap(header);
+        const placeColumnIndex = chooseBestPlaceColumn(rows, headerIndex + 1, map.placeCandidates);
 
-      if ([placeColumnIndex, map.course, map.start, map.end, map.trainer].some(v => v === -1)) {
-        throw new Error('Не удалось определить нужные столбцы в Excel.');
-      }
+        if ([placeColumnIndex, map.course, map.start, map.end, map.trainer].some(v => v === -1)) {
+            throw new Error('Не удалось определить нужные столбцы в Excel.');
+        }
 
-      const allDataRows = rows.slice(headerIndex + 1);
-      const courses = [];
+        const allDataRows = rows.slice(headerIndex + 1);
+        const courses = [];
 
-      for (const row of allDataRows) {
-        const placeRaw = cleanText(row[placeColumnIndex]);
-        if (!placeRaw) continue;
-        if (!normalizeText(placeRaw).includes('нижнекамск')) continue;
+        for (const row of allDataRows) {
+            const placeRaw = cleanText(row[placeColumnIndex]);
+            if (!placeRaw) continue;
+            if (!normalizeText(placeRaw).includes('нижнекамск')) continue;
 
-        const course = cleanText(row[map.course]);
-        const trainer = cleanText(row[map.trainer]);
-        const start = excelDateToJS(row[map.start]);
-        const end = excelDateToJS(row[map.end]);
+            const course = cleanText(row[map.course]);
+            const trainer = cleanText(row[map.trainer]);
+            const start = excelDateToJS(row[map.start]);
+            const end = excelDateToJS(row[map.end]);
 
-        if (!course || !start || !end) continue;
+            if (!course || !start || !end) continue;
 
-        const placeInfo = extractRoomAndFloor(placeRaw);
+            const placeInfo = extractRoomAndFloor(placeRaw);
 
-        courses.push({
-          place: placeRaw,
-          course,
-          trainer,
-          start,
-          end: end < start ? start : end,
-          room: placeInfo.room,
-          floor: placeInfo.floor
-        });
-      }
+            courses.push({
+                place: placeRaw,
+                course,
+                trainer,
+                start,
+                end: end < start ? start : end,
+                room: placeInfo.room,
+                floor: placeInfo.floor
+            });
+        }
 
-      if (!courses.length) {
-        throw new Error('В файле не найдено ни одной строки по Нижнекамску.');
-      }
+        if (!courses.length) {
+            throw new Error('В файле не найдено ни одной строки по Нижнекамску.');
+        }
 
-      const years = [...new Set(courses.flatMap(c => [c.start.getFullYear(), c.end.getFullYear()]))];
-      let week = parseWeekFromFilename(fileName, years);
-      if (!week) week = detectBestWeek(courses);
+        const years = [...new Set(courses.flatMap(c => [c.start.getFullYear(), c.end.getFullYear()]))];
+        let week = parseWeekFromFilename(fileName, years);
+        if (!week) week = detectBestWeek(courses);
 
-      const monday = startOfWeekMonday(week.start);
-      const days = Array.from({ length: 5 }, (_, i) => addDays(monday, i));
+        const monday = startOfWeekMonday(week.start);
+        const days = Array.from({length: 5}, (_, i) => addDays(monday, i));
 
-      return { courses, days };
+        return {courses, days};
     }
 
     function addTemplateChrome(slide, day) {
-      slide.background = { color: 'FFFFFF' };
+        slide.background = {color: 'FFFFFF'};
 
-      slide.addImage({
-        path: BG_TOP_RIGHT_URL,
-        x: 9.65,
-        y: 0.0,
-        w: 3.68,
-        h: 1.18
-      });
+        slide.addImage({
+            path: BG_TOP_RIGHT_URL,
+            x: 9.65,
+            y: 0.0,
+            w: 3.68,
+            h: 1.18
+        });
 
-      slide.addImage({
-        path: LOGO_URL,
-        x: 0.08,
-        y: 0.06,
-        w: 1.48,
-        h: 0.56
-      });
+        slide.addImage({
+            path: LOGO_URL,
+            x: 0.08,
+            y: 0.06,
+            w: 1.48,
+            h: 0.56
+        });
 
-      slide.addShape('rect', {
-        x: 1.55,
-        y: 0.22,
-        w: 10.0,
-        h: 0.36,
-        fill: { color: '0B7E88' },
-        line: { color: '0B7E88', transparency: 100 }
-      });
-
-      slide.addText('Расписание обучений', {
-        x: 4.0,
-        y: 0.26,
-        w: 5.1,
-        h: 0.22,
-        align: 'center',
-        fontFace: 'Arial',
-        fontSize: 18,
-        bold: true,
-        color: 'FFFFFF',
-        margin: 0
-      });
-
-      slide.addShape('rect', {
-        x: 0.22,
-        y: 0.58,
-        w: 12.83,
-        h: 0.3,
-        fill: { color: '0A98A4' },
-        line: { color: '0A98A4', transparency: 100 }
-      });
-
-      slide.addText(formatSlideDate(day), {
-        x: 4.05,
-        y: 0.62,
-        w: 5.0,
-        h: 0.18,
-        align: 'center',
-        fontFace: 'Arial',
-        fontSize: 13,
-        bold: true,
-        color: 'FFFFFF',
-        margin: 0
-      });
-
-      slide.addShape('line', {
-        x: 0.2,
-        y: 0.89,
-        w: 13.05,
-        h: 0,
-        line: { color: '111111', width: 1.1 }
-      });
-
-      const headerY = 0.9;
-      const colXs = [0.22, 1.22, 2.22, 8.95, 10.75, 11.48];
-      const colWs = [1.00, 1.00, 6.73, 1.80, 0.73, 1.57];
-      const labels = [
-        'Время\nначала',
-        'Время\nокончания',
-        'Программа обучения',
-        'Преподаватель',
-        'Этаж',
-        'Аудитория'
-      ];
-
-      for (let i = 0; i < labels.length; i++) {
         slide.addShape('rect', {
-          x: colXs[i],
-          y: headerY,
-          w: colWs[i],
-          h: 0.52,
-          fill: { color: 'A9C8CD' },
-          line: { color: 'FFFFFF', width: 1 }
+            x: 1.55,
+            y: 0.22,
+            w: 10.0,
+            h: 0.36,
+            fill: {color: '0B7E88'},
+            line: {color: '0B7E88', transparency: 100}
         });
 
-        slide.addText(labels[i], {
-          x: colXs[i] + 0.02,
-          y: headerY + 0.08,
-          w: colWs[i] - 0.04,
-          h: 0.3,
-          fontFace: 'Arial',
-          fontSize: 10,
-          color: 'FFFFFF',
-          align: 'center',
-          valign: 'mid',
-          margin: 0
+        slide.addText('Расписание обучений', {
+            x: 4.0,
+            y: 0.26,
+            w: 5.1,
+            h: 0.22,
+            align: 'center',
+            fontFace: 'Arial',
+            fontSize: 18,
+            bold: true,
+            color: 'FFFFFF',
+            margin: 0
         });
-      }
 
-      slide.addText('Ежедневно для всех желающих в СИБУРИНТЕХ-НК проводится экскурсия по зданию с посещением учебных классов.', {
-        x: 1.85,
-        y: 6.82,
-        w: 9.8,
-        h: 0.22,
-        fontFace: 'Arial',
-        fontSize: 10.5,
-        color: '111111',
-        align: 'center',
-        margin: 0
-      });
+        slide.addShape('rect', {
+            x: 0.22,
+            y: 0.58,
+            w: 12.83,
+            h: 0.3,
+            fill: {color: '0A98A4'},
+            line: {color: '0A98A4', transparency: 100}
+        });
 
-      slide.addText([
-        { text: 'Место встречи: у расписания на 1 этаже в 11:00. ', options: { bold: true } },
-        { text: 'По вопросам экскурсии Вы можете обратиться в кабинет 3.15.' }
-      ], {
-        x: 1.65,
-        y: 7.03,
-        w: 10.2,
-        h: 0.26,
-        fontFace: 'Arial',
-        fontSize: 10.5,
-        color: '111111',
-        align: 'center',
-        margin: 0
-      });
+        slide.addText(formatSlideDate(day), {
+            x: 4.05,
+            y: 0.62,
+            w: 5.0,
+            h: 0.18,
+            align: 'center',
+            fontFace: 'Arial',
+            fontSize: 13,
+            bold: true,
+            color: 'FFFFFF',
+            margin: 0
+        });
+
+        slide.addShape('line', {
+            x: 0.2,
+            y: 0.89,
+            w: 13.05,
+            h: 0,
+            line: {color: '111111', width: 1.1}
+        });
+
+        const headerY = 0.9;
+        const colXs = [0.22, 1.22, 2.22, 8.95, 10.75, 11.48];
+        const colWs = [1.00, 1.00, 6.73, 1.80, 0.73, 1.57];
+        const labels = [
+            'Время\nначала',
+            'Время\nокончания',
+            'Программа обучения',
+            'Преподаватель',
+            'Этаж',
+            'Аудитория'
+        ];
+
+        for (let i = 0; i < labels.length; i++) {
+            slide.addShape('rect', {
+                x: colXs[i],
+                y: headerY,
+                w: colWs[i],
+                h: 0.52,
+                fill: {color: 'A9C8CD'},
+                line: {color: 'FFFFFF', width: 1}
+            });
+
+            slide.addText(labels[i], {
+                x: colXs[i] + 0.02,
+                y: headerY + 0.08,
+                w: colWs[i] - 0.04,
+                h: 0.3,
+                fontFace: 'Arial',
+                fontSize: 10,
+                color: 'FFFFFF',
+                align: 'center',
+                valign: 'mid',
+                margin: 0
+            });
+        }
+
+        slide.addText('Ежедневно для всех желающих в СИБУРИНТЕХ-НК проводится экскурсия по зданию с посещением учебных классов.', {
+            x: 1.85,
+            y: 6.82,
+            w: 9.8,
+            h: 0.22,
+            fontFace: 'Arial',
+            fontSize: 10.5,
+            color: '111111',
+            align: 'center',
+            margin: 0
+        });
+
+        slide.addText([
+            {text: 'Место встречи: у расписания на 1 этаже в 11:00. ', options: {bold: true}},
+            {text: 'По вопросам экскурсии Вы можете обратиться в кабинет 3.15.'}
+        ], {
+            x: 1.65,
+            y: 7.03,
+            w: 10.2,
+            h: 0.26,
+            fontFace: 'Arial',
+            fontSize: 10.5,
+            color: '111111',
+            align: 'center',
+            margin: 0
+        });
     }
 
     function renderDayRows(slide, dayCourses) {
-      const bodyTop = 1.43;
-      const footerTop = 6.82;
-      const bodyBottom = footerTop - 0.14;
-      const bodyHeight = bodyBottom - bodyTop;
-      const visibleRows = Math.max(dayCourses.length, 8);
-      const rowH = bodyHeight / visibleRows;
+        const bodyTop = 1.43;
+        const footerTop = 6.82;
+        const bodyBottom = footerTop - 0.14;
+        const bodyHeight = bodyBottom - bodyTop;
+        const visibleRows = Math.max(dayCourses.length, 8);
+        const rowH = bodyHeight / visibleRows;
 
-      const fontSize = 10.6;
-      const colXs = [0.22, 1.22, 2.22, 8.95, 10.75, 11.48];
-      const colWs = [1.00, 1.00, 6.73, 1.80, 0.73, 1.57];
+        const fontSize = 10.6;
+        const colXs = [0.22, 1.22, 2.22, 8.95, 10.75, 11.48];
+        const colWs = [1.00, 1.00, 6.73, 1.80, 0.73, 1.57];
 
-      for (let i = 0; i < visibleRows; i++) {
-        const lineY = bodyTop + i * rowH;
+        for (let i = 0; i < visibleRows; i++) {
+            const lineY = bodyTop + i * rowH;
+            slide.addShape('line', {
+                x: 0.22,
+                y: lineY,
+                w: 12.83,
+                h: 0,
+                line: {color: '9CC6CC', width: 0.8}
+            });
+        }
+
         slide.addShape('line', {
-          x: 0.22,
-          y: lineY,
-          w: 12.83,
-          h: 0,
-          line: { color: '9CC6CC', width: 0.8 }
-        });
-      }
-
-      slide.addShape('line', {
-        x: 0.22,
-        y: bodyTop + visibleRows * rowH,
-        w: 12.83,
-        h: 0,
-        line: { color: '9CC6CC', width: 0.8 }
-      });
-
-      dayCourses.forEach((course, idx) => {
-        const y = bodyTop + idx * rowH + 0.02;
-        const rowHeight = rowH - 0.03;
-
-        slide.addText('08:00', {
-          x: colXs[0],
-          y,
-          w: colWs[0],
-          h: rowHeight,
-          fontFace: 'Arial',
-          fontSize,
-          color: '111111',
-          align: 'center',
-          valign: 'mid',
-          margin: 0,
-          fit: 'shrink'
+            x: 0.22,
+            y: bodyTop + visibleRows * rowH,
+            w: 12.83,
+            h: 0,
+            line: {color: '9CC6CC', width: 0.8}
         });
 
-        slide.addText('17:00', {
-          x: colXs[1],
-          y,
-          w: colWs[1],
-          h: rowHeight,
-          fontFace: 'Arial',
-          fontSize,
-          color: '111111',
-          align: 'center',
-          valign: 'mid',
-          margin: 0,
-          fit: 'shrink'
-        });
+        dayCourses.forEach((course, idx) => {
+            const y = bodyTop + idx * rowH + 0.02;
+            const rowHeight = rowH - 0.03;
 
-        slide.addText(course.course, {
-          x: colXs[2] + 0.03,
-          y,
-          w: colWs[2] - 0.06,
-          h: rowHeight,
-          fontFace: 'Arial',
-          fontSize,
-          color: '111111',
-          align: 'left',
-          valign: 'mid',
-          margin: 0,
-          breakLine: false,
-          fit: 'shrink'
-        });
+            slide.addText('08:00', {
+                x: colXs[0],
+                y,
+                w: colWs[0],
+                h: rowHeight,
+                fontFace: 'Arial',
+                fontSize,
+                color: '111111',
+                align: 'center',
+                valign: 'mid',
+                margin: 0,
+                fit: 'shrink'
+            });
 
-        slide.addText(extractFirstTrainerName(course.trainer), {
-          x: colXs[3] + 0.03,
-          y,
-          w: colWs[3] - 0.06,
-          h: rowHeight,
-          fontFace: 'Arial',
-          fontSize,
-          color: '111111',
-          align: 'left',
-          valign: 'mid',
-          margin: 0,
-          breakLine: false,
-          fit: 'shrink'
-        });
+            slide.addText('17:00', {
+                x: colXs[1],
+                y,
+                w: colWs[1],
+                h: rowHeight,
+                fontFace: 'Arial',
+                fontSize,
+                color: '111111',
+                align: 'center',
+                valign: 'mid',
+                margin: 0,
+                fit: 'shrink'
+            });
 
-        slide.addText(course.floor || '', {
-          x: colXs[4] + 0.01,
-          y,
-          w: colWs[4] - 0.02,
-          h: rowHeight,
-          fontFace: 'Arial',
-          fontSize,
-          color: '111111',
-          align: 'center',
-          valign: 'mid',
-          margin: 0,
-          fit: 'shrink'
-        });
+            slide.addText(course.course, {
+                x: colXs[2] + 0.03,
+                y,
+                w: colWs[2] - 0.06,
+                h: rowHeight,
+                fontFace: 'Arial',
+                fontSize,
+                color: '111111',
+                align: 'left',
+                valign: 'mid',
+                margin: 0,
+                breakLine: false,
+                fit: 'shrink'
+            });
 
-        slide.addText(course.room || '', {
-          x: colXs[5] + 0.02,
-          y,
-          w: colWs[5] - 0.04,
-          h: rowHeight,
-          fontFace: 'Arial',
-          fontSize,
-          color: '111111',
-          align: 'center',
-          valign: 'mid',
-          margin: 0,
-          breakLine: false,
-          fit: 'shrink'
+            slide.addText(extractFirstTrainerName(course.trainer), {
+                x: colXs[3] + 0.03,
+                y,
+                w: colWs[3] - 0.06,
+                h: rowHeight,
+                fontFace: 'Arial',
+                fontSize,
+                color: '111111',
+                align: 'left',
+                valign: 'mid',
+                margin: 0,
+                breakLine: false,
+                fit: 'shrink'
+            });
+
+            slide.addText(course.floor || '', {
+                x: colXs[4] + 0.01,
+                y,
+                w: colWs[4] - 0.02,
+                h: rowHeight,
+                fontFace: 'Arial',
+                fontSize,
+                color: '111111',
+                align: 'center',
+                valign: 'mid',
+                margin: 0,
+                fit: 'shrink'
+            });
+
+            slide.addText(course.room || '', {
+                x: colXs[5] + 0.02,
+                y,
+                w: colWs[5] - 0.04,
+                h: rowHeight,
+                fontFace: 'Arial',
+                fontSize,
+                color: '111111',
+                align: 'center',
+                valign: 'mid',
+                margin: 0,
+                breakLine: false,
+                fit: 'shrink'
+            });
         });
-      });
     }
 
     async function generatePresentation(file) {
-      setStatus('Читаю Excel…');
+        setStatus('Читаю Excel…');
 
-      const data = await file.arrayBuffer();
-      const workbook = XLSX.read(data, { type: 'array', cellDates: true });
-      const { courses, days } = extractCourses(workbook, file.name);
+        const data = await file.arrayBuffer();
+        const workbook = XLSX.read(data, {type: 'array', cellDates: true});
+        const {courses, days} = extractCourses(workbook, file.name);
 
-      setStatus(`Найдено курсов по Нижнекамску: ${courses.length}.\nФормирую ${days.length} слайдов…`);
+        setStatus(`Найдено курсов по Нижнекамску: ${courses.length}.\nФормирую ${days.length} слайдов…`);
 
-      const pptx = new PptxGenJS();
-      pptx.layout = 'LAYOUT_WIDE';
-      pptx.author = 'OpenAI';
-      pptx.company = 'SIBURINTECH';
-      pptx.subject = 'Расписание обучения Нижнекамск';
-      pptx.title = 'Расписание обучения - Нижнекамск';
-      pptx.lang = 'ru-RU';
-      pptx.theme = {
-        headFontFace: 'Arial',
-        bodyFontFace: 'Arial',
-        lang: 'ru-RU'
-      };
+        const pptx = new PptxGenJS();
+        pptx.layout = 'LAYOUT_WIDE';
+        pptx.author = 'OpenAI';
+        pptx.company = 'SIBURINTECH';
+        pptx.subject = 'Расписание обучения Нижнекамск';
+        pptx.title = 'Расписание обучения - Нижнекамск';
+        pptx.lang = 'ru-RU';
+        pptx.theme = {
+            headFontFace: 'Arial',
+            bodyFontFace: 'Arial',
+            lang: 'ru-RU'
+        };
 
-      days.forEach(day => {
-        const slide = pptx.addSlide();
-        addTemplateChrome(slide, day);
-        renderDayRows(slide, buildDayCourses(courses, day));
-      });
+        days.forEach(day => {
+            const slide = pptx.addSlide();
+            addTemplateChrome(slide, day);
+            renderDayRows(slide, buildDayCourses(courses, day));
+        });
 
-      const fileName = `raspisanie-nizhnekamsk-${formatDateShort(days[0])}-${formatDateShort(days[4])}.pptx`;
+        const fileName = `raspisanie-nizhnekamsk-${formatDateShort(days[0])}-${formatDateShort(days[4])}.pptx`;
 
-      setStatus('Скачиваю готовую презентацию…', 'success');
-      await pptx.writeFile({ fileName });
-      setStatus(`Готово. Презентация скачана: ${fileName}`, 'success');
+        setStatus('Скачиваю готовую презентацию…', 'success');
+        await pptx.writeFile({fileName});
+        setStatus(`Готово. Презентация скачана: ${fileName}`, 'success');
     }
 
     generateBtn.addEventListener('click', async () => {
-      const file = fileInput.files && fileInput.files[0];
+        const file = fileInput.files && fileInput.files[0];
 
-      if (!file) {
-        setStatus('Сначала выбери Excel-файл.', 'error');
-        return;
-      }
+        if (!file) {
+            setStatus('Сначала выбери Excel-файл.', 'error');
+            return;
+        }
 
-      generateBtn.disabled = true;
+        generateBtn.disabled = true;
 
-      try {
-        await generatePresentation(file);
-      } catch (error) {
-        console.error(error);
-        setStatus('Ошибка: ' + (error && error.message ? error.message : 'не удалось обработать файл.'), 'error');
-      } finally {
-        generateBtn.disabled = false;
-      }
+        try {
+            await generatePresentation(file);
+        } catch (error) {
+            console.error(error);
+            setStatus('Ошибка: ' + (error && error.message ? error.message : 'не удалось обработать файл.'), 'error');
+        } finally {
+            generateBtn.disabled = false;
+        }
     });
-  </script>
+</script>
 </body>
 </html>
