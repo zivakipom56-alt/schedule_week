@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-    <meta charset="UTF-8"/>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Excel → PPTX</title>
     <style>
         :root {
@@ -26,18 +26,17 @@
             --radius-md: 16px;
         }
 
-        * {
-            box-sizing: border-box;
-        }
+        * { box-sizing: border-box; }
 
         html, body {
             margin: 0;
             padding: 0;
             font-family: Inter, Arial, Helvetica, sans-serif;
             color: var(--text);
-            background: radial-gradient(circle at top right, rgba(11, 143, 154, 0.08), transparent 24%),
-            radial-gradient(circle at left top, rgba(11, 88, 96, 0.06), transparent 22%),
-            linear-gradient(180deg, #f7fbfc 0%, #f2f6f7 100%);
+            background:
+                    radial-gradient(circle at top right, rgba(11, 143, 154, 0.08), transparent 24%),
+                    radial-gradient(circle at left top, rgba(11, 88, 96, 0.06), transparent 22%),
+                    linear-gradient(180deg, #f7fbfc 0%, #f2f6f7 100%);
         }
 
         body {
@@ -100,7 +99,7 @@
         .panel {
             border: 1px solid rgba(15, 94, 102, 0.10);
             border-radius: 24px;
-            background: linear-gradient(180deg, rgba(255, 255, 255, .96), rgba(245, 249, 250, .92));
+            background: linear-gradient(180deg, rgba(255,255,255,.96), rgba(245,249,250,.92));
             padding: 20px;
         }
 
@@ -247,7 +246,7 @@
                 <div class="panel-badge">Нижнекамск • Пн–Пт</div>
             </div>
 
-            <input class="file-input" id="excelFile" type="file" accept=".xlsx,.xls,.xlsm"/>
+            <input class="file-input" id="excelFile" type="file" accept=".xlsx,.xls,.xlsm" />
 
             <div class="actions">
                 <button class="btn" id="generateBtn">Сгенерировать PPTX</button>
@@ -265,9 +264,6 @@
     const statusEl = document.getElementById('status');
     const fileInput = document.getElementById('excelFile');
     const generateBtn = document.getElementById('generateBtn');
-
-    const LOGO_URL = 'logo sith.jpg';
-    const BG_TOP_RIGHT_URL = 'fon.jpg';
 
     const RU_MONTHS = [
         'января', 'февраля', 'марта', 'апреля', 'мая', 'июня',
@@ -365,7 +361,7 @@
         const end = new Date(endYear, m2 - 1, d2);
 
         if (Number.isNaN(start) || Number.isNaN(end)) return null;
-        return {start, end};
+        return { start, end };
     }
 
     function detectHeaderRow(rows) {
@@ -381,7 +377,7 @@
         const findIndex = predicate => headerRow.findIndex((name, idx) => predicate(normalizeText(name), idx));
 
         const placeIndexes = headerRow
-            .map((name, idx) => ({idx, key: normalizeText(name)}))
+            .map((name, idx) => ({ idx, key: normalizeText(name) }))
             .filter(item => item.key === 'место проведения')
             .map(item => item.idx);
 
@@ -441,7 +437,7 @@
         let current = startOfWeekMonday(addDays(minDate, -7));
         const finish = addDays(maxDate, 7);
 
-        let best = {score: -1, start: current, end: addDays(current, 4)};
+        let best = { score: -1, start: current, end: addDays(current, 4) };
 
         while (current <= finish) {
             let score = 0;
@@ -451,7 +447,7 @@
             }
 
             if (score > best.score) {
-                best = {score, start: current, end: addDays(current, 4)};
+                best = { score, start: current, end: addDays(current, 4) };
             }
 
             current = addDays(current, 7);
@@ -488,21 +484,21 @@
 
     function extractRoomAndFloor(place) {
         const text = cleanText(place);
-        if (!text) return {room: '', floor: ''};
+        if (!text) return { room: '', floor: '' };
 
         const lowered = text.toLowerCase();
 
         if (lowered.includes('полигоны')) {
-            return {room: 'Полигоны', floor: ''};
+            return { room: 'Полигоны', floor: '' };
         }
 
         const roomMatch = text.match(/\b(\d\.\d{1,2})\b/);
         if (roomMatch) {
             const room = roomMatch[1];
-            return {room, floor: room.charAt(0)};
+            return { room, floor: room.charAt(0) };
         }
 
-        return {room: '', floor: ''};
+        return { room: '', floor: '' };
     }
 
     function compareRoomValues(a, b) {
@@ -553,7 +549,7 @@
     function extractCourses(workbook, fileName) {
         const sheetName = workbook.SheetNames.includes('Источник') ? 'Источник' : workbook.SheetNames[0];
         const sheet = workbook.Sheets[sheetName];
-        const rows = XLSX.utils.sheet_to_json(sheet, {header: 1, raw: true, defval: ''});
+        const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, raw: true, defval: '' });
 
         const headerIndex = detectHeaderRow(rows);
         if (headerIndex === -1) {
@@ -605,37 +601,21 @@
         if (!week) week = detectBestWeek(courses);
 
         const monday = startOfWeekMonday(week.start);
-        const days = Array.from({length: 5}, (_, i) => addDays(monday, i));
+        const days = Array.from({ length: 5 }, (_, i) => addDays(monday, i));
 
-        return {courses, days};
+        return { courses, days };
     }
 
     function addTemplateChrome(slide, day) {
-        slide.background = {color: 'FFFFFF'};
-
-        slide.addImage({
-            path: BG_TOP_RIGHT_URL,
-            x: 9.65,
-            y: 0.0,
-            w: 3.68,
-            h: 1.18
-        });
-
-        slide.addImage({
-            path: LOGO_URL,
-            x: 0.08,
-            y: 0.06,
-            w: 1.48,
-            h: 0.56
-        });
+        slide.background = { color: 'FFFFFF' };
 
         slide.addShape('rect', {
             x: 1.55,
             y: 0.22,
             w: 10.0,
             h: 0.36,
-            fill: {color: '0B7E88'},
-            line: {color: '0B7E88', transparency: 100}
+            fill: { color: '0B7E88' },
+            line: { color: '0B7E88', transparency: 100 }
         });
 
         slide.addText('Расписание обучений', {
@@ -656,8 +636,8 @@
             y: 0.58,
             w: 12.83,
             h: 0.3,
-            fill: {color: '0A98A4'},
-            line: {color: '0A98A4', transparency: 100}
+            fill: { color: '0A98A4' },
+            line: { color: '0A98A4', transparency: 100 }
         });
 
         slide.addText(formatSlideDate(day), {
@@ -678,7 +658,7 @@
             y: 0.89,
             w: 13.05,
             h: 0,
-            line: {color: '111111', width: 1.1}
+            line: { color: '111111', width: 1.1 }
         });
 
         const headerY = 0.9;
@@ -699,8 +679,8 @@
                 y: headerY,
                 w: colWs[i],
                 h: 0.52,
-                fill: {color: 'A9C8CD'},
-                line: {color: 'FFFFFF', width: 1}
+                fill: { color: 'A9C8CD' },
+                line: { color: 'FFFFFF', width: 1 }
             });
 
             slide.addText(labels[i], {
@@ -730,8 +710,8 @@
         });
 
         slide.addText([
-            {text: 'Место встречи: у расписания на 1 этаже в 11:00. ', options: {bold: true}},
-            {text: 'По вопросам экскурсии Вы можете обратиться в кабинет 3.15.'}
+            { text: 'Место встречи: у расписания на 1 этаже в 11:00. ', options: { bold: true } },
+            { text: 'По вопросам экскурсии Вы можете обратиться в кабинет 3.15.' }
         ], {
             x: 1.65,
             y: 7.03,
@@ -764,7 +744,7 @@
                 y: lineY,
                 w: 12.83,
                 h: 0,
-                line: {color: '9CC6CC', width: 0.8}
+                line: { color: '9CC6CC', width: 0.8 }
             });
         }
 
@@ -773,7 +753,7 @@
             y: bodyTop + visibleRows * rowH,
             w: 12.83,
             h: 0,
-            line: {color: '9CC6CC', width: 0.8}
+            line: { color: '9CC6CC', width: 0.8 }
         });
 
         dayCourses.forEach((course, idx) => {
@@ -873,8 +853,8 @@
         setStatus('Читаю Excel…');
 
         const data = await file.arrayBuffer();
-        const workbook = XLSX.read(data, {type: 'array', cellDates: true});
-        const {courses, days} = extractCourses(workbook, file.name);
+        const workbook = XLSX.read(data, { type: 'array', cellDates: true });
+        const { courses, days } = extractCourses(workbook, file.name);
 
         setStatus(`Найдено курсов по Нижнекамску: ${courses.length}.\nФормирую ${days.length} слайдов…`);
 
@@ -900,7 +880,7 @@
         const fileName = `raspisanie-nizhnekamsk-${formatDateShort(days[0])}-${formatDateShort(days[4])}.pptx`;
 
         setStatus('Скачиваю готовую презентацию…', 'success');
-        await pptx.writeFile({fileName});
+        await pptx.writeFile({ fileName });
         setStatus(`Готово. Презентация скачана: ${fileName}`, 'success');
     }
 
