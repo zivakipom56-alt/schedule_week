@@ -806,7 +806,7 @@
         const workbook = XLSX.read(data, { type: 'array', cellDates: true });
         const { courses, days } = extractCourses(workbook, file.name);
 
-        setStatus(`Найдено курсов по Нижнекамску: ${courses.length}.\nФормирую ${days.length} слайдов…`);
+        setStatus(`Найдено курсов по Нижнекамску: ${courses.length}.\nФормирую слайды…`);
 
         const pptx = new PptxGenJS();
         pptx.layout = 'LAYOUT_WIDE';
@@ -821,10 +821,35 @@
             lang: 'ru-RU'
         };
 
+        // 1. Общие слайды: Пн–Пт
         days.forEach(day => {
             const slide = pptx.addSlide();
             addTemplateChrome(slide, day);
             renderDayTable(slide, buildDayCourses(courses, day));
+        });
+
+        // 2. Этажные слайды: 2, 3, 4 этаж — Пн–Пт
+        ['2', '3', '4'].forEach(floor => {
+            days.forEach(day => {
+                const slide = pptx.addSlide();
+                addTemplateChrome(slide, day);
+
+                slide.addText(`Этаж ${floor}`, {
+                    x: 10.55,
+                    y: 0.62,
+                    w: 1.9,
+                    h: 0.18,
+                    align: 'right',
+                    fontFace: 'Arial',
+                    fontSize: 10,
+                    bold: true,
+                    color: 'FFFFFF',
+                    margin: 0
+                });
+
+                const floorCourses = buildDayCourses(courses, day).filter(c => c.floor === floor);
+                renderDayTable(slide, floorCourses);
+            });
         });
 
         const fileName = `raspisanie-nizhnekamsk-${formatDateShort(days[0])}-${formatDateShort(days[4])}.pptx`;
