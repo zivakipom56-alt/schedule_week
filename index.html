@@ -508,22 +508,11 @@
         return best;
     }
 
-    function extractFirstTrainerName(value) {
-        const raw = String(value ?? '')
-            .replace(/\u00A0/g, ' ')
-            .replace(/\r/g, '\n')
-            .trim();
+    function formatTrainerName(value) {
+        const cleaned = cleanText(value);
+        if (!cleaned) return '';
 
-        if (!raw) return '';
-
-        const firstChunk = raw
-            .split(/\n|,/)
-            .map(s => s.trim())
-            .filter(Boolean)[0] || '';
-
-        if (!firstChunk) return '';
-
-        const parts = firstChunk.split(/\s+/).filter(Boolean);
+        const parts = cleaned.split(/\s+/).filter(Boolean);
 
         if (parts.length >= 2) {
             const surname = parts[0];
@@ -531,7 +520,26 @@
             return `${name} ${surname}`;
         }
 
-        return firstChunk;
+        return cleaned;
+    }
+
+    function extractTrainerNames(value) {
+        const raw = String(value ?? '')
+            .replace(/\u00A0/g, ' ')
+            .replace(/\r/g, '\n')
+            .trim();
+
+        if (!raw) return '';
+
+        return raw
+            .split(/\s*\/\s*/)
+            .map(part => part
+                .split(/\n|,/)
+                .map(item => item.trim())
+                .filter(Boolean)[0] || '')
+            .map(formatTrainerName)
+            .filter(Boolean)
+            .join(' / ');
     }
 
     function extractRoomAndFloor(place) {
@@ -802,7 +810,7 @@
                         border: { type: 'solid', color: grid, pt: 0.8 }, margin: 0.03,
                         fit: 'shrink'
                     }},
-                { text: course ? extractFirstTrainerName(course.trainer) : '', options: {
+                { text: course ? extractTrainerNames(course.trainer) : '', options: {
                         fontFace: 'Arial', fontSize: 10.6, color: textColor,
                         fill: bodyFill, align: 'left', valign: 'mid',
                         border: { type: 'solid', color: grid, pt: 0.8 }, margin: 0.03,
