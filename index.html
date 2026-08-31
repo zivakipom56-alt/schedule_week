@@ -47,7 +47,7 @@
 
         .shell {
             width: 100%;
-            max-width: 880px;
+            max-width: 1120px;
         }
 
         .logo-wrap {
@@ -94,6 +94,12 @@
             color: var(--muted);
         }
 
+        .upload-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 18px;
+        }
+
         .panel {
             border: 1px solid rgba(15, 94, 102, 0.10);
             border-radius: 24px;
@@ -110,9 +116,16 @@
         }
 
         .panel-title {
-            font-size: 16px;
-            font-weight: 700;
+            font-size: 20px;
+            font-weight: 800;
             color: var(--text);
+        }
+
+        .panel-subtitle {
+            margin-top: 4px;
+            font-size: 13px;
+            line-height: 1.35;
+            color: var(--muted);
         }
 
         .panel-badge {
@@ -151,7 +164,8 @@
             font-weight: 800;
             cursor: pointer;
             transition: transform .15s ease, opacity .15s ease, box-shadow .15s ease;
-            min-width: 240px;
+            width: 100%;
+            min-width: 0;
             color: #fff;
             background: linear-gradient(135deg, #0b7d88, #0b5760);
             box-shadow: 0 14px 28px rgba(11, 88, 96, 0.18);
@@ -207,6 +221,10 @@
                 border-radius: 18px;
             }
 
+            .upload-grid {
+                grid-template-columns: 1fr;
+            }
+
             .panel-top {
                 flex-direction: column;
                 align-items: flex-start;
@@ -231,22 +249,45 @@
     <div class="card">
         <div class="hero">
             <h1 class="title">Excel → PPTX</h1>
-            <div class="subtitle">Загрузка графика и генерация презентации</div>
+            <div class="subtitle">Загрузка графика и генерация презентаций для учебных центров</div>
         </div>
 
-        <div class="panel">
-            <div class="panel-top">
-                <div class="panel-title">Выберите файл</div>
-                <div class="panel-badge">Нижнекамск • Пн–Пт</div>
+        <div class="upload-grid">
+            <div class="panel">
+                <div class="panel-top">
+                    <div>
+                        <div class="panel-title">Нижнекамск</div>
+                        <div class="panel-subtitle">Будут выгружены только мероприятия Нижнекамска</div>
+                    </div>
+                    <div class="panel-badge">Пн–Пт</div>
+                </div>
+
+                <input class="file-input" id="excelFileNizhnekamsk" type="file" accept=".xlsx,.xls,.xlsm" />
+
+                <div class="actions">
+                    <button class="btn" id="generateBtnNizhnekamsk">Сгенерировать PPTX</button>
+                </div>
+
+                <div id="statusNizhnekamsk" class="status">Ожидаю Excel-файл.</div>
             </div>
 
-            <input class="file-input" id="excelFile" type="file" accept=".xlsx,.xls,.xlsm" />
+            <div class="panel">
+                <div class="panel-top">
+                    <div>
+                        <div class="panel-title">Тобольск</div>
+                        <div class="panel-subtitle">Будут выгружены только мероприятия Тобольска</div>
+                    </div>
+                    <div class="panel-badge">Пн–Пт</div>
+                </div>
 
-            <div class="actions">
-                <button class="btn" id="generateBtn">Сгенерировать PPTX</button>
+                <input class="file-input" id="excelFileTobolsk" type="file" accept=".xlsx,.xls,.xlsm" />
+
+                <div class="actions">
+                    <button class="btn" id="generateBtnTobolsk">Сгенерировать PPTX</button>
+                </div>
+
+                <div id="statusTobolsk" class="status">Ожидаю Excel-файл.</div>
             </div>
-
-            <div id="status" class="status">Ожидаю Excel-файл.</div>
         </div>
     </div>
 </div>
@@ -255,16 +296,33 @@
 <script src="https://cdn.jsdelivr.net/gh/gitbrent/pptxgenjs/dist/pptxgen.bundle.js"></script>
 
 <script>
-    const statusEl = document.getElementById('status');
-    const fileInput = document.getElementById('excelFile');
-    const generateBtn = document.getElementById('generateBtn');
+    const CITY_CONFIGS = [
+        {
+            key: 'nizhnekamsk',
+            title: 'Нижнекамск',
+            filter: 'нижнекамск',
+            fileSlug: 'nizhnekamsk',
+            fileInputId: 'excelFileNizhnekamsk',
+            buttonId: 'generateBtnNizhnekamsk',
+            statusId: 'statusNizhnekamsk'
+        },
+        {
+            key: 'tobolsk',
+            title: 'Тобольск',
+            filter: 'тобольск',
+            fileSlug: 'tobolsk',
+            fileInputId: 'excelFileTobolsk',
+            buttonId: 'generateBtnTobolsk',
+            statusId: 'statusTobolsk'
+        }
+    ];
 
     const RU_MONTHS = [
         'января', 'февраля', 'марта', 'апреля', 'мая', 'июня',
         'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'
     ];
 
-    function setStatus(message, type = '') {
+    function setStatus(statusEl, message, type = '') {
         statusEl.textContent = message;
         statusEl.className = 'status' + (type ? ' ' + type : '');
     }
@@ -384,7 +442,7 @@
         };
     }
 
-    function chooseBestPlaceColumn(rows, startRowIndex, candidateIndexes) {
+    function chooseBestPlaceColumn(rows, startRowIndex, candidateIndexes, cityFilter) {
         if (!candidateIndexes || !candidateIndexes.length) return -1;
         if (candidateIndexes.length === 1) return candidateIndexes[0];
 
@@ -397,7 +455,7 @@
 
                 const lowered = value.toLowerCase();
 
-                if (lowered.includes('нижнекамск')) score += 1;
+                if (lowered.includes(cityFilter)) score += 4;
                 if (lowered.includes('сибуринтех')) score += 1;
                 if (lowered.includes('полигоны')) score += 6;
                 if (/\b\d\.\d{1,2}\b/.test(value)) score += 6;
@@ -478,21 +536,27 @@
 
     function extractRoomAndFloor(place) {
         const text = cleanText(place);
-        if (!text) return { room: '', floor: '' };
+        if (!text) return { room: '', floor: '', floors: [] };
 
         const lowered = text.toLowerCase();
 
         if (lowered.includes('полигоны')) {
-            return { room: 'Полигоны', floor: '' };
+            return { room: 'Полигоны', floor: '', floors: [] };
         }
 
-        const roomMatch = text.match(/\b(\d\.\d{1,2})\b/);
-        if (roomMatch) {
-            const room = roomMatch[1];
-            return { room, floor: room.charAt(0) };
+        const roomMatches = [...text.matchAll(/\b(\d)\.(\d{1,2})\b/g)];
+        if (roomMatches.length) {
+            const rooms = [...new Set(roomMatches.map(match => match[0]))];
+            const floors = [...new Set(roomMatches.map(match => match[1]))];
+
+            return {
+                room: rooms.join(' / '),
+                floor: floors.join(' / '),
+                floors
+            };
         }
 
-        return { room: '', floor: '' };
+        return { room: '', floor: '', floors: [] };
     }
 
     function compareRoomValues(a, b) {
@@ -518,8 +582,8 @@
             return a.course.localeCompare(b.course, 'ru');
         }
 
-        const matchA = roomA.match(/^(\d)\.(\d{1,2})$/);
-        const matchB = roomB.match(/^(\d)\.(\d{1,2})$/);
+        const matchA = roomA.match(/\b(\d)\.(\d{1,2})\b/);
+        const matchB = roomB.match(/\b(\d)\.(\d{1,2})\b/);
 
         if (matchA && matchB) {
             const floorA = Number(matchA[1]);
@@ -540,7 +604,21 @@
             .sort(compareRoomValues);
     }
 
-    function extractCourses(workbook, fileName) {
+    function getPresentationFloors(courses) {
+        const defaultFloors = ['2', '3', '4'];
+        const detectedFloors = courses.flatMap(course => course.floors || []);
+
+        return [...new Set([...defaultFloors, ...detectedFloors])]
+            .sort((a, b) => Number(a) - Number(b));
+    }
+
+    function courseBelongsToFloor(course, floor) {
+        return Array.isArray(course.floors)
+            ? course.floors.includes(floor)
+            : course.floor === floor;
+    }
+
+    function extractCourses(workbook, fileName, cityConfig) {
         const sheetName = workbook.SheetNames.includes('Источник') ? 'Источник' : workbook.SheetNames[0];
         const sheet = workbook.Sheets[sheetName];
         const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, raw: true, defval: '' });
@@ -552,7 +630,12 @@
 
         const header = rows[headerIndex].map(cleanText);
         const map = buildHeaderMap(header);
-        const placeColumnIndex = chooseBestPlaceColumn(rows, headerIndex + 1, map.placeCandidates);
+        const placeColumnIndex = chooseBestPlaceColumn(
+            rows,
+            headerIndex + 1,
+            map.placeCandidates,
+            cityConfig.filter
+        );
 
         if ([placeColumnIndex, map.course, map.start, map.end, map.trainer].some(v => v === -1)) {
             throw new Error('Не удалось определить нужные столбцы в Excel.');
@@ -564,7 +647,7 @@
         for (const row of allDataRows) {
             const placeRaw = cleanText(row[placeColumnIndex]);
             if (!placeRaw) continue;
-            if (!normalizeText(placeRaw).includes('нижнекамск')) continue;
+            if (!normalizeText(placeRaw).includes(cityConfig.filter)) continue;
 
             const course = cleanText(row[map.course]);
             const trainer = cleanText(row[map.trainer]);
@@ -582,12 +665,13 @@
                 start,
                 end: end < start ? start : end,
                 room: placeInfo.room,
-                floor: placeInfo.floor
+                floor: placeInfo.floor,
+                floors: placeInfo.floors
             });
         }
 
         if (!courses.length) {
-            throw new Error('В файле не найдено ни одной строки по Нижнекамску.');
+            throw new Error(`В файле не найдено ни одной строки по городу ${cityConfig.title}.`);
         }
 
         const years = [...new Set(courses.flatMap(c => [c.start.getFullYear(), c.end.getFullYear()]))];
@@ -741,7 +825,7 @@
         return rows;
     }
 
-    function renderDayTable(slide, dayCourses) {
+    function renderDayTable(slide, dayCourses, cityConfig) {
         const tableX = 0.22;
         const tableY = 0.90;
         const footerTop = 6.82;
@@ -771,49 +855,54 @@
             autoFit: false
         });
 
-        slide.addText('Ежедневно для всех желающих в СИБУРИНТЕХ-НК проводится экскурсия по зданию с посещением учебных классов.', {
-            x: 1.85,
-            y: 6.82,
-            w: 9.8,
-            h: 0.22,
-            fontFace: 'Arial',
-            fontSize: 10.5,
-            color: '111111',
-            align: 'center',
-            margin: 0
-        });
+        if (cityConfig.key === 'nizhnekamsk') {
+            slide.addText('Ежедневно для всех желающих в СИБУРИНТЕХ-НК проводится экскурсия по зданию с посещением учебных классов.', {
+                x: 1.85,
+                y: 6.82,
+                w: 9.8,
+                h: 0.22,
+                fontFace: 'Arial',
+                fontSize: 10.5,
+                color: '111111',
+                align: 'center',
+                margin: 0
+            });
 
-        slide.addText([
-            { text: 'Место встречи: у расписания на 1 этаже в 11:00. ', options: { bold: true } },
-            { text: 'По вопросам экскурсии Вы можете обратиться в кабинет 3.15.' }
-        ], {
-            x: 1.65,
-            y: 7.03,
-            w: 10.2,
-            h: 0.26,
-            fontFace: 'Arial',
-            fontSize: 10.5,
-            color: '111111',
-            align: 'center',
-            margin: 0
-        });
+            slide.addText([
+                { text: 'Место встречи: у расписания на 1 этаже в 11:00. ', options: { bold: true } },
+                { text: 'По вопросам экскурсии Вы можете обратиться в кабинет 3.15.' }
+            ], {
+                x: 1.65,
+                y: 7.03,
+                w: 10.2,
+                h: 0.26,
+                fontFace: 'Arial',
+                fontSize: 10.5,
+                color: '111111',
+                align: 'center',
+                margin: 0
+            });
+        }
     }
 
-    async function generatePresentation(file) {
-        setStatus('Читаю Excel…');
+    async function generatePresentation(file, cityConfig, statusEl) {
+        setStatus(statusEl, 'Читаю Excel…');
 
         const data = await file.arrayBuffer();
         const workbook = XLSX.read(data, { type: 'array', cellDates: true });
-        const { courses, days } = extractCourses(workbook, file.name);
+        const { courses, days } = extractCourses(workbook, file.name, cityConfig);
 
-        setStatus(`Найдено курсов по Нижнекамску: ${courses.length}.\nФормирую слайды…`);
+        setStatus(
+            statusEl,
+            `Найдено курсов по городу ${cityConfig.title}: ${courses.length}.\nФормирую слайды…`
+        );
 
         const pptx = new PptxGenJS();
         pptx.layout = 'LAYOUT_WIDE';
         pptx.author = 'OpenAI';
         pptx.company = 'SIBURINTECH';
-        pptx.subject = 'Расписание обучения Нижнекамск';
-        pptx.title = 'Расписание обучения - Нижнекамск';
+        pptx.subject = `Расписание обучения ${cityConfig.title}`;
+        pptx.title = `Расписание обучения — ${cityConfig.title}`;
         pptx.lang = 'ru-RU';
         pptx.theme = {
             headFontFace: 'Arial',
@@ -825,11 +914,11 @@
         days.forEach(day => {
             const slide = pptx.addSlide();
             addTemplateChrome(slide, day);
-            renderDayTable(slide, buildDayCourses(courses, day));
+            renderDayTable(slide, buildDayCourses(courses, day), cityConfig);
         });
 
-        // 2. Этажные слайды: 2, 3, 4 этаж — Пн–Пт
-        ['2', '3', '4'].forEach(floor => {
+        // 2. Этажные слайды: базовые этажи 2, 3, 4 и дополнительные этажи из Excel — Пн–Пт
+        getPresentationFloors(courses).forEach(floor => {
             days.forEach(day => {
                 const slide = pptx.addSlide();
                 addTemplateChrome(slide, day);
@@ -847,36 +936,48 @@
                     margin: 0
                 });
 
-                const floorCourses = buildDayCourses(courses, day).filter(c => c.floor === floor);
-                renderDayTable(slide, floorCourses);
+                const floorCourses = buildDayCourses(courses, day)
+                    .filter(course => courseBelongsToFloor(course, floor));
+
+                renderDayTable(slide, floorCourses, cityConfig);
             });
         });
 
-        const fileName = `raspisanie-nizhnekamsk-${formatDateShort(days[0])}-${formatDateShort(days[4])}.pptx`;
+        const fileName = `raspisanie-${cityConfig.fileSlug}-${formatDateShort(days[0])}-${formatDateShort(days[4])}.pptx`;
 
-        setStatus('Скачиваю готовую презентацию…', 'success');
+        setStatus(statusEl, 'Скачиваю готовую презентацию…', 'success');
         await pptx.writeFile({ fileName });
-        setStatus(`Готово. Презентация скачана: ${fileName}`, 'success');
+        setStatus(statusEl, `Готово. Презентация скачана: ${fileName}`, 'success');
     }
 
-    generateBtn.addEventListener('click', async () => {
-        const file = fileInput.files && fileInput.files[0];
+    CITY_CONFIGS.forEach(cityConfig => {
+        const fileInput = document.getElementById(cityConfig.fileInputId);
+        const generateBtn = document.getElementById(cityConfig.buttonId);
+        const statusEl = document.getElementById(cityConfig.statusId);
 
-        if (!file) {
-            setStatus('Сначала выбери Excel-файл.', 'error');
-            return;
-        }
+        generateBtn.addEventListener('click', async () => {
+            const file = fileInput.files && fileInput.files[0];
 
-        generateBtn.disabled = true;
+            if (!file) {
+                setStatus(statusEl, 'Сначала выбери Excel-файл.', 'error');
+                return;
+            }
 
-        try {
-            await generatePresentation(file);
-        } catch (error) {
-            console.error(error);
-            setStatus('Ошибка: ' + (error && error.message ? error.message : 'не удалось обработать файл.'), 'error');
-        } finally {
-            generateBtn.disabled = false;
-        }
+            generateBtn.disabled = true;
+
+            try {
+                await generatePresentation(file, cityConfig, statusEl);
+            } catch (error) {
+                console.error(error);
+                setStatus(
+                    statusEl,
+                    'Ошибка: ' + (error && error.message ? error.message : 'не удалось обработать файл.'),
+                    'error'
+                );
+            } finally {
+                generateBtn.disabled = false;
+            }
+        });
     });
 </script>
 </body>
