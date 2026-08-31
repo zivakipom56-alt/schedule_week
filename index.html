@@ -322,6 +322,35 @@
         'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'
     ];
 
+    const ENTERPRISE_ABBREVIATIONS = [
+        ['ООО "РусВинил"', 'РусВинил'],
+        ['ПАО "КАЗАНЬОРГСИНТЕЗ"', 'КОС'],
+        ['ПАО "Нижнекамскнефтехим"', 'НКНХ'],
+        ['ООО "УЭТП-НКНХ"', 'УЭТП-НКНХ'],
+        ['АО «Воронежсинтезкаучук»', 'ВСК'],
+        ['АО "Сибур-Нефтехим"', 'СНХ'],
+        ['ООО "СИБУР-Кстово"', 'Кстово'],
+        ['ООО "ЗапСибНефтехим"', 'ЗСНХ'],
+        ['АО "Сибур-ПЭТФ"', 'ПЭТФ'],
+        ['АО "КЗСК"', 'КЗСК'],
+        ['ООО "СИБУР"', 'СИБУР'],
+        ['ООО «Томскнефтехим»', 'ТНХ'],
+        ['АО "Сибур-Химпром"', 'СХП'],
+        ['АО "ПОЛИЭФ"', 'ПОЛИЭФ'],
+        ['АО "СибурТюменьГаз"', 'СТГ'],
+        ['ООО "Запсибтрансгаз"', 'ЗСТГ'],
+        ['ООО "БИАКСПЛЕН"', 'БИАКСПЛЕН'],
+        ['ООО «СИБУР-Инновации»', 'СИБУР-Инновации'],
+        ['ООО "Портэнерго"', 'Портэнерго'],
+        ['ООО "АМУРСКИЙ ГХК"', 'АГХК'],
+        ['ООО "СИБУР ПолиЛаб"', 'СИБУР ПолиЛаб'],
+        ['ООО "СИБУР ЦПТ"', 'СИБУР ЦПТ'],
+        ['АО "СИБУР-РТ"', 'СИБУР-РТ'],
+        ['ООО "Новые ресурсы"', 'Новые ресурсы'],
+        ['ООО «СИБУР Диджитал»', 'СИБУР Диджитал'],
+        ['ООО «СИБУР Коннект»', 'СИБУР Коннект']
+    ];
+
     function setStatus(statusEl, message, type = '') {
         statusEl.textContent = message;
         statusEl.className = 'status' + (type ? ' ' + type : '');
@@ -340,6 +369,26 @@
             .replace(/\u00A0/g, ' ')
             .replace(/\s+/g, ' ')
             .trim();
+    }
+
+    function normalizeEnterpriseName(value) {
+        return normalizeText(value)
+            .replace(/[«»„“”"'`]/g, '')
+            .replace(/[.,]/g, '')
+            .replace(/\s+/g, ' ')
+            .trim();
+    }
+
+    function getEnterpriseAbbreviation(value) {
+        const cleaned = cleanText(value);
+        if (!cleaned) return '';
+
+        const normalized = normalizeEnterpriseName(cleaned);
+        const match = ENTERPRISE_ABBREVIATIONS.find(
+            ([enterprise]) => normalizeEnterpriseName(enterprise) === normalized
+        );
+
+        return match ? match[1] : cleaned;
     }
 
     function excelDateToJS(value) {
@@ -427,18 +476,26 @@
 
     function buildHeaderMap(headerRow) {
         const findIndex = predicate => headerRow.findIndex((name, idx) => predicate(normalizeText(name), idx));
+        const trainerIndex = findIndex(name => name.includes('кт/сопровождающий'));
 
         const placeIndexes = headerRow
             .map((name, idx) => ({ idx, key: normalizeText(name) }))
             .filter(item => item.key === 'место проведения')
             .map(item => item.idx);
 
+        const enterpriseIndexes = headerRow
+            .map((name, idx) => ({ idx, key: normalizeText(name) }))
+            .filter(item => item.key === 'предприятие' || item.key.includes('предприятие кт'))
+            .map(item => item.idx)
+            .sort((a, b) => Math.abs(a - trainerIndex) - Math.abs(b - trainerIndex));
+
         return {
             placeCandidates: placeIndexes,
             course: findIndex(name => name === 'название мероприятия'),
             start: findIndex(name => name === 'дата начала'),
             end: findIndex(name => name === 'дата завершения'),
-            trainer: findIndex(name => name.includes('кт/сопровождающий'))
+            trainer: trainerIndex,
+            enterprise: enterpriseIndexes[0] ?? -1
         };
     }
 
@@ -523,7 +580,7 @@
         return cleaned;
     }
 
-    function extractTrainerNames(value) {
+    function extractTrainerNames(value, enterpriseValue = '', cityConfig = null) {
         const raw = String(value ?? '')
             .replace(/\u00A0/g, ' ')
             .replace(/\r/g, '\n')
@@ -531,14 +588,34 @@
 
         if (!raw) return '';
 
-        return raw
+        const trainers = raw
             .split(/\s*\/\s*/)
             .map(part => part
                 .split(/\n|,/)
                 .map(item => item.trim())
                 .filter(Boolean)[0] || '')
             .map(formatTrainerName)
-            .filter(Boolean)
+            .filter(Boolean);
+
+        if (!cityConfig || cityConfig.key !== 'tobolsk') {
+            return trainers.join(' / ');
+        }
+
+        const enterprises = String(enterpriseValue ?? '')
+            .replace(/\u00A0/g, ' ')
+            .split(/\s*\/\s*/)
+            .map(cleanText)
+            .filter(Boolean);
+
+        return trainers
+            .map((trainer, index) => {
+                const enterprise = enterprises.length === 1
+                    ? enterprises[0]
+                    : (enterprises[index] || '');
+                const abbreviation = getEnterpriseAbbreviation(enterprise);
+
+                return abbreviation ? `${trainer} (${abbreviation})` : trainer;
+            })
             .join(' / ');
     }
 
@@ -649,6 +726,10 @@
             throw new Error('Не удалось определить нужные столбцы в Excel.');
         }
 
+        if (cityConfig.key === 'tobolsk' && map.enterprise === -1) {
+            throw new Error('Не удалось найти столбец «Предприятие», необходимый для расписания Тобольска.');
+        }
+
         const allDataRows = rows.slice(headerIndex + 1);
         const courses = [];
 
@@ -659,6 +740,7 @@
 
             const course = cleanText(row[map.course]);
             const trainer = cleanText(row[map.trainer]);
+            const enterprise = map.enterprise === -1 ? '' : cleanText(row[map.enterprise]);
             const start = excelDateToJS(row[map.start]);
             const end = excelDateToJS(row[map.end]);
 
@@ -670,6 +752,7 @@
                 place: placeRaw,
                 course,
                 trainer,
+                enterprise,
                 start,
                 end: end < start ? start : end,
                 room: placeInfo.room,
@@ -748,16 +831,29 @@
         });
     }
 
-    function buildTableRows(dayCourses, visibleRows) {
+    function getTrainingTime(cityConfig, day) {
+        if (cityConfig.key === 'tobolsk') {
+            return {
+                start: '09:00',
+                end: day.getDay() === 5 ? '17:00' : '18:00'
+            };
+        }
+
+        return { start: '08:00', end: '17:00' };
+    }
+
+    function buildTableRows(dayCourses, visibleRows, day, cityConfig) {
         const headerFill = 'A9C8CD';
         const headerFont = 'FFFFFF';
         const bodyFill = 'FFFFFF';
         const grid = '9CC6CC';
         const textColor = '111111';
+        const trainingTime = getTrainingTime(cityConfig, day);
+        const isTobolsk = cityConfig.key === 'tobolsk';
 
         const rows = [];
 
-        rows.push([
+        const headerRow = [
             { text: 'Время\nначала', options: {
                     bold: false, fontFace: 'Arial', fontSize: 10, color: headerFont,
                     fill: headerFill, align: 'center', valign: 'mid',
@@ -788,18 +884,21 @@
                     fill: headerFill, align: 'center', valign: 'mid',
                     border: { type: 'solid', color: 'FFFFFF', pt: 1 }
                 }}
-        ]);
+        ];
+
+        if (isTobolsk) headerRow.splice(4, 1);
+        rows.push(headerRow);
 
         for (let i = 0; i < visibleRows; i++) {
             const course = dayCourses[i];
 
-            rows.push([
-                { text: course ? '08:00' : '', options: {
+            const bodyRow = [
+                { text: course ? trainingTime.start : '', options: {
                         fontFace: 'Arial', fontSize: 10.6, color: textColor,
                         fill: bodyFill, align: 'center', valign: 'mid',
                         border: { type: 'solid', color: grid, pt: 0.8 }, margin: 0.02
                     }},
-                { text: course ? '17:00' : '', options: {
+                { text: course ? trainingTime.end : '', options: {
                         fontFace: 'Arial', fontSize: 10.6, color: textColor,
                         fill: bodyFill, align: 'center', valign: 'mid',
                         border: { type: 'solid', color: grid, pt: 0.8 }, margin: 0.02
@@ -810,7 +909,7 @@
                         border: { type: 'solid', color: grid, pt: 0.8 }, margin: 0.03,
                         fit: 'shrink'
                     }},
-                { text: course ? extractTrainerNames(course.trainer) : '', options: {
+                { text: course ? extractTrainerNames(course.trainer, course.enterprise, cityConfig) : '', options: {
                         fontFace: 'Arial', fontSize: 10.6, color: textColor,
                         fill: bodyFill, align: 'left', valign: 'mid',
                         border: { type: 'solid', color: grid, pt: 0.8 }, margin: 0.03,
@@ -827,13 +926,16 @@
                         border: { type: 'solid', color: grid, pt: 0.8 }, margin: 0.02,
                         fit: 'shrink'
                     }}
-            ]);
+            ];
+
+            if (isTobolsk) bodyRow.splice(4, 1);
+            rows.push(bodyRow);
         }
 
         return rows;
     }
 
-    function renderDayTable(slide, dayCourses, cityConfig) {
+    function renderDayTable(slide, dayCourses, cityConfig, day) {
         const tableX = 0.22;
         const tableY = 0.90;
         const footerTop = 6.82;
@@ -844,14 +946,17 @@
         const totalRows = visibleBodyRows + 1;
         const rowH = tableHeight / totalRows;
 
-        const rows = buildTableRows(dayCourses, visibleBodyRows);
+        const rows = buildTableRows(dayCourses, visibleBodyRows, day, cityConfig);
+        const columnWidths = cityConfig.key === 'tobolsk'
+            ? [1.00, 1.00, 6.73, 2.53, 1.57]
+            : [1.00, 1.00, 6.73, 1.80, 0.73, 1.57];
 
         slide.addTable(rows, {
             x: tableX,
             y: tableY,
             w: 12.83,
             h: tableHeight,
-            colW: [1.00, 1.00, 6.73, 1.80, 0.73, 1.57],
+            colW: columnWidths,
             rowH: Array(totalRows).fill(rowH),
             border: { type: 'solid', color: '9CC6CC', pt: 0.8 },
             margin: 0.02,
@@ -922,34 +1027,36 @@
         days.forEach(day => {
             const slide = pptx.addSlide();
             addTemplateChrome(slide, day);
-            renderDayTable(slide, buildDayCourses(courses, day), cityConfig);
+            renderDayTable(slide, buildDayCourses(courses, day), cityConfig, day);
         });
 
-        // 2. Этажные слайды: базовые этажи 2, 3, 4 и дополнительные этажи из Excel — Пн–Пт
-        getPresentationFloors(courses).forEach(floor => {
-            days.forEach(day => {
-                const slide = pptx.addSlide();
-                addTemplateChrome(slide, day);
+        // 2. Этажные слайды формируются только для Нижнекамска
+        if (cityConfig.key === 'nizhnekamsk') {
+            getPresentationFloors(courses).forEach(floor => {
+                days.forEach(day => {
+                    const slide = pptx.addSlide();
+                    addTemplateChrome(slide, day);
 
-                slide.addText(`Этаж ${floor}`, {
-                    x: 10.55,
-                    y: 0.62,
-                    w: 1.9,
-                    h: 0.18,
-                    align: 'right',
-                    fontFace: 'Arial',
-                    fontSize: 10,
-                    bold: true,
-                    color: 'FFFFFF',
-                    margin: 0
+                    slide.addText(`Этаж ${floor}`, {
+                        x: 10.55,
+                        y: 0.62,
+                        w: 1.9,
+                        h: 0.18,
+                        align: 'right',
+                        fontFace: 'Arial',
+                        fontSize: 10,
+                        bold: true,
+                        color: 'FFFFFF',
+                        margin: 0
+                    });
+
+                    const floorCourses = buildDayCourses(courses, day)
+                        .filter(course => courseBelongsToFloor(course, floor));
+
+                    renderDayTable(slide, floorCourses, cityConfig, day);
                 });
-
-                const floorCourses = buildDayCourses(courses, day)
-                    .filter(course => courseBelongsToFloor(course, floor));
-
-                renderDayTable(slide, floorCourses, cityConfig);
             });
-        });
+        }
 
         const fileName = `raspisanie-${cityConfig.fileSlug}-${formatDateShort(days[0])}-${formatDateShort(days[4])}.pptx`;
 
