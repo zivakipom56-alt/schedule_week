@@ -495,7 +495,9 @@
             start: findIndex(name => name === 'дата начала'),
             end: findIndex(name => name === 'дата завершения'),
             trainer: trainerIndex,
-            enterprise: enterpriseIndexes[0] ?? -1
+            enterprise: enterpriseIndexes[0] ?? -1,
+            duration: findIndex(name => name === 'продолжительность мероприятия' ||
+                name.includes('продолжительность мероприятия'))
         };
     }
 
@@ -741,6 +743,7 @@
             const course = cleanText(row[map.course]);
             const trainer = cleanText(row[map.trainer]);
             const enterprise = map.enterprise === -1 ? '' : cleanText(row[map.enterprise]);
+            const duration = map.duration === -1 ? '' : cleanText(row[map.duration]);
             const start = excelDateToJS(row[map.start]);
             const end = excelDateToJS(row[map.end]);
 
@@ -753,6 +756,7 @@
                 course,
                 trainer,
                 enterprise,
+                duration,
                 start,
                 end: end < start ? start : end,
                 room: placeInfo.room,
@@ -831,11 +835,32 @@
         });
     }
 
-    function getTrainingTime(cityConfig, day) {
+    function parseDurationHours(value) {
+        const normalized = cleanText(value).replace(',', '.');
+        const match = normalized.match(/\d+(?:\.\d+)?/);
+        if (!match) return null;
+
+        const hours = Number(match[0]);
+        return Number.isFinite(hours) ? hours : null;
+    }
+
+    function getTrainingTime(cityConfig, day, course = null) {
         if (cityConfig.key === 'tobolsk') {
+            if (day.getDay() !== 5) {
+                return { start: '09:00', end: '18:00' };
+            }
+
+            const endsOnFriday = course?.end instanceof Date && course.end.getDay() === 5;
+            if (endsOnFriday) {
+                const durationHours = parseDurationHours(course.duration);
+                if (durationHours !== null && durationHours < 32) {
+                    return { start: '09:00', end: '18:00' };
+                }
+            }
+
             return {
                 start: '09:00',
-                end: day.getDay() === 5 ? '17:00' : '18:00'
+                end: '17:00'
             };
         }
 
@@ -848,7 +873,6 @@
         const bodyFill = 'FFFFFF';
         const grid = '9CC6CC';
         const textColor = '111111';
-        const trainingTime = getTrainingTime(cityConfig, day);
         const isTobolsk = cityConfig.key === 'tobolsk';
 
         const rows = [];
@@ -891,6 +915,7 @@
 
         for (let i = 0; i < visibleRows; i++) {
             const course = dayCourses[i];
+            const trainingTime = getTrainingTime(cityConfig, day, course);
 
             const bodyRow = [
                 { text: course ? trainingTime.start : '', options: {
