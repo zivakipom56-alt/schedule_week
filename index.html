@@ -1159,8 +1159,14 @@
     }
 
     function buildTableRows(dayCourses, visibleRows, day, cityConfig) {
-        const headerFill = { color: '006E76', transparency: 61 };
-        const headerFont = 'FFFFFF';
+        const headerFill = cityConfig.key === 'nizhnekamsk'
+            ? { color: 'F3C6A8', transparency: 0 }
+            : { color: '006E76', transparency: 61 };
+        // Для Нижнекамска: персиково-оранжевая шапка + жирный тёмный текст.
+        // Тобольск оставляем визуально без изменений.
+        // Тобольск оставляем визуально без изменений.
+        const headerFont = cityConfig.key === 'nizhnekamsk' ? '1A1A1A' : 'FFFFFF';
+        const headerBold = cityConfig.key === 'nizhnekamsk';
         const bodyFill = { color: 'FFFFFF', transparency: 61 };
         const grid = 'B2D2D8';
         const textColor = '111111';
@@ -1170,32 +1176,32 @@
 
         const headerRow = [
             { text: 'Время\nначала', options: {
-                    bold: false, fontFace: 'Calibri', fontSize: 8, color: headerFont,
+                    bold: headerBold, fontFace: 'Calibri', fontSize: 8, color: headerFont,
                     fill: headerFill, align: 'center', valign: 'middle',
                     border: { type: 'solid', color: 'FFFFFF', pt: 1 }
                 }},
             { text: 'Время\nокончания', options: {
-                    bold: false, fontFace: 'Calibri', fontSize: 8, color: headerFont,
+                    bold: headerBold, fontFace: 'Calibri', fontSize: 8, color: headerFont,
                     fill: headerFill, align: 'center', valign: 'middle',
                     border: { type: 'solid', color: 'FFFFFF', pt: 1 }
                 }},
             { text: 'Программа обучения', options: {
-                    bold: false, fontFace: 'Calibri', fontSize: 10, color: headerFont,
+                    bold: headerBold, fontFace: 'Calibri', fontSize: 10, color: headerFont,
                     fill: headerFill, align: 'center', valign: 'middle',
                     border: { type: 'solid', color: 'FFFFFF', pt: 1 }
                 }},
             { text: 'Корпоративный тренер', options: {
-                    bold: false, fontFace: 'Calibri', fontSize: 10, color: headerFont,
+                    bold: headerBold, fontFace: 'Calibri', fontSize: 10, color: headerFont,
                     fill: headerFill, align: 'center', valign: 'middle',
                     border: { type: 'solid', color: 'FFFFFF', pt: 1 }
                 }},
             { text: 'Этаж', options: {
-                    bold: false, fontFace: 'Calibri', fontSize: 10, color: headerFont,
+                    bold: headerBold, fontFace: 'Calibri', fontSize: 10, color: headerFont,
                     fill: headerFill, align: 'center', valign: 'middle',
                     border: { type: 'solid', color: 'FFFFFF', pt: 1 }
                 }},
             { text: 'Класс', options: {
-                    bold: false, fontFace: 'Calibri', fontSize: 10, color: headerFont,
+                    bold: headerBold, fontFace: 'Calibri', fontSize: 10, color: headerFont,
                     fill: headerFill, align: 'center', valign: 'middle',
                     border: { type: 'solid', color: 'FFFFFF', pt: 1 }
                 }}
