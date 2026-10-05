@@ -503,6 +503,7 @@
                     <li>Этаж определяется по первой цифре аудитории. При нескольких аудиториях мероприятие попадёт на слайды всех указанных этажей.</li>
                     <li>Обязательно заполните «Название мероприятия», «Дата начала» и «Дата завершения».</li>
                     <li>В столбце «КТ/сопровождающий» укажите <code>Фамилия Имя</code>. Нескольких КТ разделяйте знаком <code>/</code>.</li>
+                    <li>При формировании талонов на обед каждый указанный КТ/сопровождающий автоматически добавляет ещё <code>1</code> талон на каждый день обучения.</li>
                 </ul>
                 <p class="instruction-note">Время 08:00–17:00, этажи и информация об экскурсии добавляются автоматически.</p>
             `
@@ -1022,6 +1023,23 @@
         return Number.isFinite(count) ? Math.max(0, Math.round(count)) : null;
     }
 
+    function countLunchTicketTrainers(value) {
+        const raw = String(value ?? '')
+            .replace(/\u00A0/g, ' ')
+            .replace(/\r/g, '\n')
+            .trim();
+
+        if (!raw) return 0;
+
+        // В графике нескольких КТ/сопровождающих указывают через «/».
+        // Каждое непустое ФИО = ещё один талон на каждый день обучения.
+        return raw
+            .split(/\s*\/\s*/)
+            .map(part => cleanText(part))
+            .filter(Boolean)
+            .length;
+    }
+
     function dateKey(date) {
         return [
             date.getFullYear(),
@@ -1069,6 +1087,9 @@
         if (participantsIndex === -1) {
             throw new Error('Не удалось найти столбец «Кол-во участников».');
         }
+        if (baseMap.trainer === -1) {
+            throw new Error('Не удалось найти столбец «КТ/сопровождающий».');
+        }
         if (placeColumnIndex === -1 || baseMap.start === -1 || baseMap.end === -1) {
             throw new Error('Не удалось определить место проведения или даты обучения.');
         }
@@ -1076,6 +1097,7 @@
         const totalsByDate = new Map();
         let matchedCourses = 0;
         let totalTicketDays = 0;
+        let totalTrainerTicketDays = 0;
 
         rows.slice(headerIndex + 1).forEach((row, offset) => {
             const excelRowNumber = headerIndex + 2 + offset;
@@ -1092,6 +1114,7 @@
             const start = excelDateToJS(row[baseMap.start]);
             const endRaw = excelDateToJS(row[baseMap.end]);
             const participants = parseParticipantsCount(row[participantsIndex]);
+            const trainerCount = countLunchTicketTrainers(row[baseMap.trainer]);
 
             if (!start || !endRaw) {
                 throw new Error(`Строка ${excelRowNumber}: для курса СИТХ не заполнены корректные даты.`);
@@ -1101,14 +1124,16 @@
             }
 
             const end = endRaw < start ? start : endRaw;
+            const ticketsPerDay = participants + trainerCount;
             matchedCourses += 1;
 
             for (let day = cloneDate(start); day <= end; day = addDays(day, 1)) {
                 const key = dateKey(day);
                 const current = totalsByDate.get(key) || { date: cloneDate(day), count: 0 };
-                current.count += participants;
+                current.count += ticketsPerDay;
                 totalsByDate.set(key, current);
-                totalTicketDays += participants;
+                totalTicketDays += ticketsPerDay;
+                totalTrainerTicketDays += trainerCount;
             }
         });
 
@@ -1119,6 +1144,7 @@
         return {
             matchedCourses,
             totalTickets: totalTicketDays,
+            trainerTickets: totalTrainerTicketDays,
             dates: [...totalsByDate.values()].sort((a, b) => a.date - b.date)
         };
     }
@@ -1375,7 +1401,7 @@
 
         setStatus(
             statusEl,
-            `Готово: ${summary.totalTickets} талонов на ${summary.dates.length} дн. (${summary.dates.length} лист.).`,
+            `Готово: ${summary.totalTickets} талонов на ${summary.dates.length} дн. (${summary.dates.length} лист.; КТ/сопровождающие учтены).`,
             'success'
         );
     }
