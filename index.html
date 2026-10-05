@@ -1132,9 +1132,9 @@
         };
     }
 
-    function clearUnusedTicket(worksheet, colNumber, rowNumbers) {
+    function clearUnusedTicket(worksheet, colNumber, rowNumbers, rowOffset = 0) {
         rowNumbers.forEach(rowNumber => {
-            const cell = worksheet.getCell(rowNumber, colNumber);
+            const cell = worksheet.getCell(rowNumber + rowOffset, colNumber);
             cell.value = null;
             cell.style = {};
             cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFFFFF' } };
@@ -1169,10 +1169,11 @@
         }
     }
 
-    function writeLunchTicket(worksheet, colNumber, bandIndex, formattedDate) {
-        // В исходном шаблоне первый ряд талонов на одну строку выше остальных.
+    function writeLunchTicket(worksheet, colNumber, bandIndex, formattedDate, rowOffset = 0) {
+        // В каждом печатном блоке первый ряд талонов на одну строку выше остальных,
+        // как в исходном шаблоне.
         const starts = [1, 11, 20, 29, 38];
-        const start = starts[bandIndex];
+        const start = starts[bandIndex] + rowOffset;
         const hasAddressHeading = bandIndex === 0;
 
         const rows = hasAddressHeading
@@ -1230,7 +1231,7 @@
         });
     }
 
-    function configureLunchTicketSheet(worksheet) {
+    function configureLunchTicketSheet(worksheet, pageCount = 1) {
         worksheet.views = [{ showGridLines: false }];
         worksheet.properties.defaultRowHeight = 15;
 
@@ -1238,6 +1239,10 @@
             worksheet.getColumn(col).width = 42.42578125;
         }
 
+        // Один печатный блок = 25 талонов (5 × 5) и занимает 46 строк.
+        // Если на одну дату талонов больше, такие блоки располагаются друг под другом
+        // на ЭТОМ ЖЕ листе Excel.
+        const PAGE_ROWS = 46;
         const rowHeights = {
             1: 19.5, 2: 9.75, 3: 25.5, 4: 16.5, 5: 16.5, 6: 24, 7: 19.5, 8: 19.5, 9: 17.25, 10: 19.5,
             11: 19.5, 12: 9.75, 13: 25.5, 14: 16.5, 15: 16.5, 16: 24, 17: 19.5, 18: 17.25, 19: 19.5,
@@ -1246,16 +1251,29 @@
             38: 19.5, 39: 9.75, 40: 25.5, 41: 16.5, 42: 16.5, 43: 24, 44: 19.5, 45: 17.25, 46: 19.5
         };
 
-        Object.entries(rowHeights).forEach(([rowNumber, height]) => {
-            worksheet.getRow(Number(rowNumber)).height = height;
-        });
+        for (let pageIndex = 0; pageIndex < pageCount; pageIndex++) {
+            const rowOffset = pageIndex * PAGE_ROWS;
+
+            Object.entries(rowHeights).forEach(([rowNumber, height]) => {
+                worksheet.getRow(Number(rowNumber) + rowOffset).height = height;
+            });
+
+            // Разрыв страницы после каждого блока из 25 талонов.
+            if (pageIndex < pageCount - 1) {
+                const breakRow = worksheet.getRow((pageIndex + 1) * PAGE_ROWS);
+                if (typeof breakRow.addPageBreak === 'function') {
+                    breakRow.addPageBreak();
+                }
+            }
+        }
 
         worksheet.pageSetup = {
             paperSize: 9, // A4
             orientation: 'landscape',
             fitToPage: true,
             fitToWidth: 1,
-            fitToHeight: 1,
+            // 0 = столько страниц по высоте, сколько необходимо.
+            fitToHeight: 0,
             horizontalCentered: true,
             verticalCentered: false,
             margins: {
@@ -1266,13 +1284,16 @@
                 header: 0,
                 footer: 0
             },
-            printArea: 'A1:E46'
+            printArea: `A1:E${pageCount * PAGE_ROWS}`
         };
     }
 
-    function createLunchTicketSheet(workbook, sheetName, formattedDate, ticketsOnSheet) {
+    function createLunchTicketSheet(workbook, sheetName, formattedDate, ticketCount) {
         const worksheet = workbook.addWorksheet(sheetName);
-        configureLunchTicketSheet(worksheet);
+        const pageCount = Math.ceil(ticketCount / LUNCH_TICKETS_PER_SHEET);
+        const PAGE_ROWS = 46;
+
+        configureLunchTicketSheet(worksheet, pageCount);
 
         const bandRows = [
             [1,2,3,4,5,6,7,8,9,10],
@@ -1282,22 +1303,24 @@
             [38,39,40,41,42,43,44,45,46]
         ];
 
-        for (let slot = 0; slot < LUNCH_TICKETS_PER_SHEET; slot++) {
-            const colNumber = (slot % 5) + 1;
-            const bandIndex = Math.floor(slot / 5);
+        for (let pageIndex = 0; pageIndex < pageCount; pageIndex++) {
+            const rowOffset = pageIndex * PAGE_ROWS;
+            const ticketOffset = pageIndex * LUNCH_TICKETS_PER_SHEET;
 
-            if (slot < ticketsOnSheet) {
-                writeLunchTicket(worksheet, colNumber, bandIndex, formattedDate);
-            } else {
-                clearUnusedTicket(worksheet, colNumber, bandRows[bandIndex]);
+            for (let slot = 0; slot < LUNCH_TICKETS_PER_SHEET; slot++) {
+                const colNumber = (slot % 5) + 1;
+                const bandIndex = Math.floor(slot / 5);
+                const ticketNumber = ticketOffset + slot;
+
+                if (ticketNumber < ticketCount) {
+                    writeLunchTicket(worksheet, colNumber, bandIndex, formattedDate, rowOffset);
+                } else {
+                    clearUnusedTicket(worksheet, colNumber, bandRows[bandIndex], rowOffset);
+                }
             }
         }
 
         return worksheet;
-    }
-
-    function safeWorksheetName(baseName, pageNumber) {
-        return pageNumber === 1 ? baseName : `${baseName} (${pageNumber})`;
     }
 
     async function generateLunchTickets(file, statusEl) {
@@ -1317,23 +1340,16 @@
         outputWorkbook.created = new Date();
         outputWorkbook.modified = new Date();
 
-        let totalSheets = 0;
-
+        // Одна дата = один лист Excel. Если талонов больше 25, печатные блоки
+        // продолжаются ниже на этом же листе и печатаются на следующих страницах.
         summary.dates.forEach(({ date, count }) => {
             const formattedDate = formatLunchTicketDate(date);
-            const pages = Math.ceil(count / LUNCH_TICKETS_PER_SHEET);
-
-            for (let page = 1; page <= pages; page++) {
-                const alreadyPlaced = (page - 1) * LUNCH_TICKETS_PER_SHEET;
-                const ticketsOnSheet = Math.min(LUNCH_TICKETS_PER_SHEET, count - alreadyPlaced);
-                createLunchTicketSheet(
-                    outputWorkbook,
-                    safeWorksheetName(formattedDate, page),
-                    formattedDate,
-                    ticketsOnSheet
-                );
-                totalSheets += 1;
-            }
+            createLunchTicketSheet(
+                outputWorkbook,
+                formattedDate,
+                formattedDate,
+                count
+            );
         });
 
         const buffer = await outputWorkbook.xlsx.writeBuffer();
@@ -1359,7 +1375,7 @@
 
         setStatus(
             statusEl,
-            `Готово: ${summary.totalTickets} талонов на ${summary.dates.length} дн. (${totalSheets} лист.).`,
+            `Готово: ${summary.totalTickets} талонов на ${summary.dates.length} дн. (${summary.dates.length} лист.).`,
             'success'
         );
     }
